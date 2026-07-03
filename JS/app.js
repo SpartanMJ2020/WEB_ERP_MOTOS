@@ -4,7 +4,7 @@
    Archivo:  app.js  —  Utilidades globales y cliente REST
    ============================================================ */
 
-const API_BASE = 'http://localhost:8081/api';
+const API_BASE = 'https://api-erp-motos.onrender.com/api';
 
 /* ── Permisos por rol ────────────────────────────────────── */
 const Permisos = {
