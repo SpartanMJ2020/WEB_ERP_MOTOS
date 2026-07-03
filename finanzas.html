@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERP Motos — Finanzas</title>
+  <link rel="stylesheet" href="CSS/style.css">
+  <style>
+    :root { --modulo-color: var(--finanzas-color); }
+    .panel-header h2 { color: var(--finanzas-color); }
+    .topbar { border-bottom: 3px solid var(--finanzas-color); }
+    .tabs { display:flex; gap:6px; flex-wrap:wrap; }
+    .tab { padding:8px 18px; border-radius:var(--radio); border:2px solid #ddd; background:#fff; cursor:pointer; font-size:.88rem; font-weight:600; transition:all var(--transicion); }
+    .tab.activo { border-color:var(--finanzas-color); background:var(--finanzas-color); color:#fff; }
+    .tab:hover:not(.activo) { border-color:var(--finanzas-color); color:var(--finanzas-color); }
+    .seccion { display:none; }
+    .seccion.activa { display:block; }
+    .saldo-card { background:linear-gradient(135deg,var(--primario),var(--acento2)); color:#fff; border-radius:var(--radio); padding:22px; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+    .saldo-card h4 { font-size:.82rem; opacity:.8; margin-bottom:4px; }
+    .saldo-card .monto { font-size:1.8rem; font-weight:700; }
+    .resumen-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px; }
+    @media(max-width:600px){ .resumen-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span style="font-size:1.6rem">🏍️</span>
+      <div><span>ERP MotoShop</span><small>Módulo: Finanzas</small></div>
+    </div>
+    <nav><ul>
+      <li><a href="dashboard.html"><span class="icon">🏠</span><span>Dashboard</span></a></li>
+      <li class="sidebar-section">Módulos</li>
+      <li><a href="ventas.html"><span class="icon">💰</span><span>Ventas</span></a></li>
+      <li><a href="clientes.html"><span class="icon">👥</span><span>Clientes</span></a></li>
+      <li><a href="finanzas.html" class="activo"><span class="icon">📊</span><span>Finanzas</span></a></li>
+      <li><a href="inventario.html"><span class="icon">📦</span><span>Inventario</span></a></li>
+      <li><a href="empleados.html"><span class="icon">👔</span><span>Empleados</span></a></li>
+      <li><a href="proveedores.html"><span class="icon">🤵</span><span>Proveedores</span></a></li>
+    </ul></nav>
+    <div class="sidebar-footer">ERP Motos v1.0 · UPFIM</div>
+  </aside>
+
+  <header class="topbar">
+    <span class="topbar-titulo">📊 Módulo de Finanzas</span>
+    <div class="topbar-usuario">
+      <div class="avatar" id="topbar-avatar">A</div>
+      <span id="topbar-nombre">Administrador</span>
+      <small id="topbar-rol" style="font-size:.75rem;opacity:.7;margin-left:6px"></small>
+      <button class="btn btn-peligro btn-sm" onclick="Sesion.cerrar()">⏻ Salir</button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div id="alerta-container"></div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h2>📊 Gestión Financiera</h2>
+        <div class="tabs">
+          <button class="tab activo" onclick="cambiarTab('resumen')">📈 Resumen</button>
+          <button class="tab" onclick="cambiarTab('ventas-pendientes')">✅ Aprobar Ventas</button>
+          <button class="tab" onclick="cambiarTab('ingresos')">💵 Ingresos</button>
+          <button class="tab" onclick="cambiarTab('egresos')">💸 Egresos</button>
+          <button class="tab" onclick="cambiarTab('cuentas')">🏦 Cuentas</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Resumen ── -->
+    <div id="sec-resumen" class="seccion activa">
+      <div class="resumen-grid">
+        <div class="stat-card" style="border-left-color:var(--finanzas-color)">
+          <div class="stat-icon" style="background:rgba(39,174,96,.1)">💵</div>
+          <div class="stat-info"><p>Total Ingresos</p><h3 id="res-ingresos">—</h3></div>
+        </div>
+        <div class="stat-card" style="border-left-color:#c0392b">
+          <div class="stat-icon" style="background:rgba(192,57,43,.1)">💸</div>
+          <div class="stat-info"><p>Total Egresos</p><h3 id="res-egresos">—</h3></div>
+        </div>
+        <div class="stat-card" style="border-left-color:#f39c12">
+          <div class="stat-icon" style="background:rgba(243,156,18,.1)">📊</div>
+          <div class="stat-info"><p>Balance Neto</p><h3 id="res-balance">—</h3></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header"><h2>🏦 Saldo por Cuenta</h2></div>
+        <div class="panel-body" id="cuentas-resumen">
+          <p style="color:var(--gris-texto)">Cargando cuentas...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Aprobación de ventas ── -->
+    <div id="sec-ventas-pendientes" class="seccion">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>✅ Ventas pendientes de aprobación</h2>
+        </div>
+        <div class="panel-body">
+          <div class="tabla-contenedor">
+            <table class="tabla">
+              <thead>
+                <tr>
+                  <th>#</th><th>Folio</th><th>Cliente</th><th>Empleado</th>
+                  <th>Total</th><th>Método Pago</th><th>Fecha</th><th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-ventas-pendientes">
+                <tr><td colspan="8" style="text-align:center;padding:24px">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Ingresos ── -->
+    <div id="sec-ingresos" class="seccion">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>💵 Ingresos</h2>
+          <button class="btn btn-exito btn-sm" onclick="abrirModal('modal-ingreso')">➕ Nuevo ingreso</button>
+        </div>
+        <div class="panel-body">
+          <div class="tabla-contenedor">
+            <table class="tabla">
+              <thead><tr><th>#</th><th>Concepto</th><th>Cuenta</th><th>Monto</th><th>Tipo</th><th>Comprobante</th><th>Fecha</th><th></th></tr></thead>
+              <tbody id="tabla-ingresos"><tr><td colspan="8" style="text-align:center;padding:24px">Cargando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Egresos ── -->
+    <div id="sec-egresos" class="seccion">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>💸 Egresos</h2>
+          <button class="btn btn-peligro btn-sm" onclick="abrirModal('modal-egreso')">➕ Nuevo egreso</button>
+        </div>
+        <div class="panel-body">
+          <div class="tabla-contenedor">
+            <table class="tabla">
+              <thead><tr><th>#</th><th>Concepto</th><th>Cuenta</th><th>Empleado</th><th>Monto</th><th>Tipo</th><th>Fecha</th><th></th></tr></thead>
+              <tbody id="tabla-egresos"><tr><td colspan="8" style="text-align:center;padding:24px">Cargando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Cuentas ── -->
+    <div id="sec-cuentas" class="seccion">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>🏦 Cuentas Financieras</h2>
+          <button class="btn btn-secundario btn-sm" onclick="abrirModal('modal-cuenta')">➕ Nueva cuenta</button>
+        </div>
+        <div class="panel-body">
+          <div class="tabla-contenedor">
+            <table class="tabla">
+              <thead><tr><th>#</th><th>Nombre</th><th>Tipo</th><th>Saldo</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody id="tabla-cuentas"><tr><td colspan="6" style="text-align:center;padding:24px">Cargando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Modal detalle venta pendiente -->
+  <div class="modal-overlay" id="modal-detalle-venta-fin">
+    <div class="modal" style="max-width:700px">
+      <div class="modal-header">
+        <h3>📋 Detalle de Venta</h3>
+        <button class="modal-close" onclick="cerrarModal('modal-detalle-venta-fin')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="tabla-contenedor">
+          <table class="tabla">
+            <thead>
+              <tr><th>Tipo</th><th>ID</th><th>Cant.</th><th>P. Unit.</th><th>Desc.</th><th>Subtotal</th></tr>
+            </thead>
+            <tbody id="tabla-detalle-venta-fin">
+              <tr><td colspan="6" style="text-align:center;padding:16px">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gris" onclick="cerrarModal('modal-detalle-venta-fin')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ingreso -->
+  <div class="modal-overlay" id="modal-ingreso">
+    <div class="modal" style="max-width:500px">
+      <div class="modal-header"><h3>💵 Nuevo Ingreso</h3><button class="modal-close" onclick="cerrarModal('modal-ingreso')">✕</button></div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group"><label>Cuenta</label><select id="in-cuenta"><option value="">— Selecciona —</option></select></div>
+          <div class="form-group"><label>Tipo</label>
+            <select id="in-tipo"><option value="venta">Venta</option><option value="abono">Abono</option><option value="otro">Otro</option></select>
+          </div>
+          <div class="form-group"><label>Monto ($)</label><input type="number" id="in-monto" min="0" step="0.01"></div>
+          <div class="form-group"><label>Comprobante</label><input type="text" id="in-comp" placeholder="Factura / Recibo #"></div>
+          <div class="form-group full"><label>Concepto</label><input type="text" id="in-concepto" placeholder="Descripción del ingreso"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gris" onclick="cerrarModal('modal-ingreso')">Cancelar</button>
+        <button class="btn btn-exito" onclick="guardarIngreso()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Egreso -->
+  <div class="modal-overlay" id="modal-egreso">
+    <div class="modal" style="max-width:500px">
+      <div class="modal-header"><h3>💸 Nuevo Egreso</h3><button class="modal-close" onclick="cerrarModal('modal-egreso')">✕</button></div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group"><label>Cuenta</label><select id="eg-cuenta"><option value="">— Selecciona —</option></select></div>
+          <div class="form-group"><label>Empleado (opcional)</label><select id="eg-emp"><option value="">— Ninguno —</option></select></div>
+          <div class="form-group"><label>Tipo</label>
+            <select id="eg-tipo"><option value="nomina">Nómina</option><option value="compra">Compra</option><option value="servicio">Servicio</option><option value="otro">Otro</option></select>
+          </div>
+          <div class="form-group"><label>Monto ($)</label><input type="number" id="eg-monto" min="0" step="0.01"></div>
+          <div class="form-group"><label>Comprobante</label><input type="text" id="eg-comp" placeholder="Recibo / Factura"></div>
+          <div class="form-group full"><label>Concepto</label><input type="text" id="eg-concepto" placeholder="Descripción del egreso"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gris" onclick="cerrarModal('modal-egreso')">Cancelar</button>
+        <button class="btn btn-peligro" onclick="guardarEgreso()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Cuenta -->
+  <div class="modal-overlay" id="modal-cuenta">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header"><h3>🏦 Nueva Cuenta</h3><button class="modal-close" onclick="cerrarModal('modal-cuenta')">✕</button></div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group"><label>Nombre</label><input type="text" id="cu-nombre" placeholder="Caja General"></div>
+          <div class="form-group"><label>Tipo</label>
+            <select id="cu-tipo"><option value="banco">Banco</option><option value="caja">Caja</option></select>
+          </div>
+          <div class="form-group"><label>Saldo Inicial ($)</label><input type="number" id="cu-saldo" min="0" step="0.01" value="0"></div>
+          <div class="form-group full"><label>Descripción</label><textarea id="cu-desc" placeholder="Descripción de la cuenta..."></textarea></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gris" onclick="cerrarModal('modal-cuenta')">Cancelar</button>
+        <button class="btn btn-secundario" onclick="guardarCuenta()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="JS/app.js"></script>
+  <script>
+    Sesion.requerida();
+    Permisos.requerirModulo('finanzas');
+
+    function cambiarTab(nombre) {
+      document.querySelectorAll('.seccion').forEach(s => s.classList.remove('activa'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('activo'));
+      document.getElementById(`sec-${nombre}`).classList.add('activa');
+      event.target.classList.add('activo');
+    }
+
+    let _cuentas = [], _empleados = [], _clientes = [];
+
+    async function cargarTodo() {
+      try {
+        [_cuentas, _empleados, _clientes] = await Promise.all([
+          Api.get('/finanzas/cuenta/obtener'),
+          Api.get('/empleados/empleado/obtener'),
+          Api.get('/clientes/cliente/obtener')
+        ]);
+        llenarSelects();
+        cargarResumen();
+        cargarVentasPendientes();
+        cargarIngresos();
+        cargarEgresos();
+        cargarCuentas();
+      } catch(e) { mostrarAlerta('No se pudo conectar con la API.', 'error'); }
+    }
+
+    function llenarSelects() {
+      ['in-cuenta','eg-cuenta'].forEach(id => {
+        const s = document.getElementById(id);
+        if (!s) return;
+        s.innerHTML = '<option value="">— Selecciona —</option>';
+        _cuentas.forEach(c => s.add(new Option(`${c.nombre} (${c.tipo})`, c.id_cuenta_PK)));
+      });
+      const se = document.getElementById('eg-emp');
+      if (se) {
+        se.innerHTML = '<option value="">— Ninguno —</option>';
+        _empleados.forEach(e => se.add(new Option(`${e.nombre} ${e.apellido_paterno}`, e.id_empleado_PK)));
+      }
+    }
+
+    async function cargarResumen() {
+      try {
+        const [ingresos, egresos] = await Promise.all([
+          Api.get('/finanzas/ingreso/obtener'),
+          Api.get('/finanzas/egreso/obtener')
+        ]);
+        const ti = ingresos.reduce((a, i) => a + i.monto, 0);
+        const te = egresos.reduce((a, e) => a + e.monto, 0);
+        document.getElementById('res-ingresos').textContent = formatearMoneda(ti);
+        document.getElementById('res-egresos').textContent  = formatearMoneda(te);
+        document.getElementById('res-balance').textContent  = formatearMoneda(ti - te);
+
+        document.getElementById('cuentas-resumen').innerHTML = _cuentas.map(c => `
+          <div class="saldo-card" style="margin-bottom:12px">
+            <div><h4>${c.tipo.toUpperCase()}</h4><div style="font-size:1rem;font-weight:600">${c.nombre}</div></div>
+            <div class="monto">${formatearMoneda(c.saldo)}</div>
+          </div>`).join('');
+      } catch(e) { console.warn(e); }
+    }
+
+    async function cargarVentasPendientes() {
+      try {
+        const data  = await Api.get('/finanzas/venta/pendientes');
+        const tbody = document.getElementById('tabla-ventas-pendientes');
+        if (!data.length) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px">No hay ventas pendientes de aprobación.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.map((v, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td><strong>${v.folio}</strong></td>
+            <td>${v.cliente ? v.cliente.nombre + ' ' + v.cliente.apellido_paterno : '—'}</td>
+            <td>${v.empleado ? v.empleado.nombre : '—'}</td>
+            <td><strong>${formatearMoneda(v.total)}</strong></td>
+            <td>${v.metodo_pago}</td>
+            <td>${formatearFecha(v.fecha_venta)}</td>
+            <td class="acciones-celda">
+              <button type="button" class="badge badge-info btn-accion" onclick="verDetalleVentaFin(${v.id_venta_PK})">Ver</button>
+              <button type="button" class="badge badge-exito btn-accion" onclick="aprobarVenta(${v.id_venta_PK})">Aprobar</button>
+              <button type="button" class="badge badge-peligro btn-accion" onclick="rechazarVenta(${v.id_venta_PK})">Rechazar</button>
+            </td>
+          </tr>`).join('');
+      } catch(e) { console.warn(e); }
+    }
+
+    async function verDetalleVentaFin(idVenta) {
+      abrirModal('modal-detalle-venta-fin');
+      const tbody = document.getElementById('tabla-detalle-venta-fin');
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:16px">Cargando...</td></tr>';
+      try {
+        const detalles = await Api.get(`/finanzas/venta/detalle/${idVenta}`);
+        if (!detalles.length) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:16px">Sin productos registrados.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = detalles.map(d => `
+          <tr>
+            <td>${d.tipo_producto}</td>
+            <td>${d.id_producto_ref}</td>
+            <td>${d.cantidad}</td>
+            <td>${formatearMoneda(d.precio_unitario)}</td>
+            <td>${d.descuento_item.toFixed(2)}%</td>
+            <td>${formatearMoneda(d.subtotal_item)}</td>
+          </tr>`).join('');
+      } catch(e) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;padding:16px">Error al cargar detalle.</td></tr>';
+      }
+    }
+
+    async function aprobarVenta(id) {
+      if (!confirm(`¿Aprobar venta ID ${id}? Se descontará el inventario.`)) return;
+      try {
+        const msg = await Api.post(`/finanzas/venta/aprobar/${id}`, {});
+        mostrarAlerta(msg, 'exito');
+        cargarVentasPendientes();
+      } catch(e) {
+        mostrarAlerta(e.message || 'Error al aprobar la venta.', 'error');
+      }
+    }
+
+    async function rechazarVenta(id) {
+      if (!confirm(`¿Rechazar venta ID ${id}?`)) return;
+      try {
+        const msg = await Api.post(`/finanzas/venta/rechazar/${id}`, {});
+        mostrarAlerta(msg, 'exito');
+        cargarVentasPendientes();
+      } catch(e) {
+        mostrarAlerta(e.message || 'Error al rechazar la venta.', 'error');
+      }
+    }
+
+    async function cargarIngresos() {
+      try {
+        const data  = await Api.get('/finanzas/ingreso/obtener');
+        const tbody = document.getElementById('tabla-ingresos');
+        if (!data.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px">Sin ingresos.</td></tr>'; return; }
+        tbody.innerHTML = data.map((i, idx) => `
+          <tr>
+            <td>${idx+1}</td><td>${i.concepto}</td>
+            <td>${i.cuenta?.nombre ?? '—'}</td>
+            <td><strong>${formatearMoneda(i.monto)}</strong></td>
+            <td><span class="badge badge-exito">${i.tipo_ingreso}</span></td>
+            <td>${i.comprobante ?? '—'}</td>
+            <td>${formatearFecha(i.fecha_ingreso)}</td>
+            <td class="acciones-celda"><button type="button" class="badge badge-peligro btn-accion" onclick="eliminar('ingreso',${i.id_ingreso_PK})">Eliminar</button></td>
+          </tr>`).join('');
+      } catch(e) { console.warn(e); }
+    }
+
+    async function cargarEgresos() {
+      try {
+        const data  = await Api.get('/finanzas/egreso/obtener');
+        const tbody = document.getElementById('tabla-egresos');
+        if (!data.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px">Sin egresos.</td></tr>'; return; }
+        tbody.innerHTML = data.map((e, idx) => `
+          <tr>
+            <td>${idx+1}</td><td>${e.concepto}</td>
+            <td>${e.cuenta?.nombre ?? '—'}</td>
+            <td>${e.empleado ? e.empleado.nombre + ' ' + e.empleado.apellido_paterno : '—'}</td>
+            <td><strong>${formatearMoneda(e.monto)}</strong></td>
+            <td><span class="badge badge-peligro">${e.tipo_egreso}</span></td>
+            <td>${formatearFecha(e.fecha_egreso)}</td>
+            <td class="acciones-celda"><button type="button" class="badge badge-peligro btn-accion" onclick="eliminar('egreso',${e.id_egreso_PK})">Eliminar</button></td>
+          </tr>`).join('');
+      } catch(e) { console.warn(e); }
+    }
+
+    async function cargarCuentas() {
+      try {
+        const data  = await Api.get('/finanzas/cuenta/obtener');
+        const tbody = document.getElementById('tabla-cuentas');
+        if (!data.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px">Sin cuentas.</td></tr>'; return; }
+        tbody.innerHTML = data.map((c, i) => `
+          <tr>
+            <td>${i+1}</td><td><strong>${c.nombre}</strong></td>
+            <td>${c.tipo}</td>
+            <td><strong>${formatearMoneda(c.saldo)}</strong></td>
+            <td><span class="badge ${c.activo ? 'badge-exito' : 'badge-peligro'}">${c.activo ? 'Activa' : 'Inactiva'}</span></td>
+            <td class="acciones-celda"><button type="button" class="badge badge-peligro btn-accion" onclick="eliminar('cuenta',${c.id_cuenta_PK})">Eliminar</button></td>
+          </tr>`).join('');
+      } catch(e) { console.warn(e); }
+    }
+
+    async function guardarIngreso() {
+      const d = {
+        cuenta:      { id_cuenta_PK: parseInt(document.getElementById('in-cuenta').value) },
+        concepto:    document.getElementById('in-concepto').value,
+        monto:       parseFloat(document.getElementById('in-monto').value) || 0,
+        tipo_ingreso:document.getElementById('in-tipo').value,
+        comprobante: document.getElementById('in-comp').value
+      };
+      try { const msg = await Api.post('/finanzas/ingreso/guardar', d); mostrarAlerta(msg, 'exito'); cerrarModal('modal-ingreso'); cargarIngresos(); cargarResumen(); }
+      catch(e) { mostrarAlerta('Error al guardar ingreso.', 'error'); }
+    }
+
+    async function guardarEgreso() {
+      const empId = parseInt(document.getElementById('eg-emp').value);
+      const d = {
+        cuenta:     { id_cuenta_PK: parseInt(document.getElementById('eg-cuenta').value) },
+        empleado:   empId ? { id_empleado_PK: empId } : null,
+        concepto:   document.getElementById('eg-concepto').value,
+        monto:      parseFloat(document.getElementById('eg-monto').value) || 0,
+        tipo_egreso:document.getElementById('eg-tipo').value,
+        comprobante:document.getElementById('eg-comp').value
+      };
+      try { const msg = await Api.post('/finanzas/egreso/guardar', d); mostrarAlerta(msg, 'exito'); cerrarModal('modal-egreso'); cargarEgresos(); cargarResumen(); }
+      catch(e) { mostrarAlerta('Error al guardar egreso.', 'error'); }
+    }
+
+    async function guardarCuenta() {
+      const d = {
+        nombre:      document.getElementById('cu-nombre').value,
+        tipo:        document.getElementById('cu-tipo').value,
+        saldo:       parseFloat(document.getElementById('cu-saldo').value) || 0,
+        descripcion: document.getElementById('cu-desc').value,
+        activo: true
+      };
+      try { const msg = await Api.post('/finanzas/cuenta/guardar', d); mostrarAlerta(msg, 'exito'); cerrarModal('modal-cuenta'); cargarCuentas(); }
+      catch(e) { mostrarAlerta('Error al guardar cuenta.', 'error'); }
+    }
+
+    async function eliminar(recurso, id) {
+      const rutas = { ingreso:'ingreso', egreso:'egreso', cuenta:'cuenta' };
+      if (!confirm(`¿Eliminar registro ID ${id}?`)) return;
+      try {
+        const msg = await Api.delete(`/finanzas/${rutas[recurso]}/eliminar/${id}`);
+        mostrarAlerta(msg, 'exito');
+        cargarTodo();
+      } catch(e) { mostrarAlerta('Error al eliminar.', 'error'); }
+    }
+
+    cargarTodo();
+  </script>
+</body>
+</html>

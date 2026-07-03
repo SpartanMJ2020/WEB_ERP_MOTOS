@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERP Motos — Iniciar Sesión</title>
+  <link rel="stylesheet" href="CSS/style.css">
+</head>
+<body class="login-page">
+
+  <div class="login-card">
+    <div class="logo">🏍️</div>
+    <h1>ERP MotoShop</h1>
+    <p>Ingresa tus credenciales para acceder al sistema</p>
+
+    <div id="alerta-container"></div>
+
+    <div class="form-group">
+      <label for="email">Correo electrónico</label>
+      <input type="email" id="email" placeholder="usuario@erpmotos.com" autocomplete="email">
+    </div>
+
+    <div class="form-group" style="margin-bottom:24px">
+      <label for="password">Contraseña</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+
+    <button class="btn btn-primario" onclick="iniciarSesion()">🔐 Iniciar sesión</button>
+
+    <p style="margin-top:20px; font-size:.78rem; color:var(--gris-texto)">
+      Universidad Politécnica de Francisco I. Madero · ERP Motos v1.0
+    </p>
+  </div>
+
+  <script src="JS/app.js"></script>
+  <script>
+    async function iniciarSesion() {
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!email || !password) {
+        mostrarAlerta('Por favor completa todos los campos.', 'advertencia');
+        return;
+      }
+
+      try {
+        const data = await Api.postJson('/empleados/empleado/login', { email, password_hash: password });
+        if (!data) return;
+
+        Sesion.guardar({
+          email:       data.email,
+          nombre:      data.nombre,
+          id_empleado: data.id_empleado,
+          id_rol:      data.id_rol,
+          rol:         data.rol,
+          token:       data.token
+        });
+        window.location.href = 'dashboard.html';
+      } catch (e) {
+        mostrarAlerta(e.message || 'Credenciales incorrectas.', 'error');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('password').addEventListener('keydown', e => {
+        if (e.key === 'Enter') iniciarSesion();
+      });
+    });
+  </script>
+</body>
+</html>

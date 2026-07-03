@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERP Motos — Clientes</title>
+  <link rel="stylesheet" href="CSS/style.css">
+  <style>
+    :root { --modulo-color: var(--clientes-color); }
+    .panel-header h2 { color: var(--clientes-color); }
+    .topbar { border-bottom: 3px solid var(--clientes-color); }
+    .tabs { display:flex; gap:6px; flex-wrap:wrap; }
+    .tab { padding:8px 18px; border-radius:var(--radio); border:2px solid #ddd; background:#fff; cursor:pointer; font-size:.88rem; font-weight:600; transition:all var(--transicion); }
+    .tab.activo { border-color:var(--clientes-color); background:var(--clientes-color); color:#fff; }
+    .tab:hover:not(.activo) { border-color:var(--clientes-color); color:var(--clientes-color); }
+    .seccion { display:none; }
+    .seccion.activa { display:block; }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span style="font-size:1.6rem">🏍️</span>
+      <div><span>ERP MotoShop</span><small>Módulo: Clientes</small></div>
+    </div>
+    <nav><ul>
+      <li><a href="dashboard.html"><span class="icon">🏠</span><span>Dashboard</span></a></li>
+      <li class="sidebar-section">Módulos</li>
+      <li><a href="ventas.html"><span class="icon">💰</span><span>Ventas</span></a></li>
+      <li><a href="clientes.html" class="activo"><span class="icon">👥</span><span>Clientes</span></a></li>
+      <li><a href="finanzas.html"><span class="icon">📊</span><span>Finanzas</span></a></li>
+      <li><a href="inventario.html"><span class="icon">📦</span><span>Inventario</span></a></li>
+      <li><a href="empleados.html"><span class="icon">👔</span><span>Empleados</span></a></li>
+      <li><a href="proveedores.html"><span class="icon">🤵</span><span>Proveedores</span></a></li>
+    </ul></nav>
+    <div class="sidebar-footer">ERP Motos v1.0 · UPFIM</div>
+  </aside>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <span class="topbar-titulo">👥 Módulo de Clientes</span>
+    <div class="topbar-usuario">
+      <div class="avatar" id="topbar-avatar">A</div>
+      <span id="topbar-nombre">Administrador</span>
+      <small id="topbar-rol" style="font-size:.75rem;opacity:.7;margin-left:6px"></small>
+      <button class="btn btn-peligro btn-sm" onclick="Sesion.cerrar()">⏻ Salir</button>
+    </div>
+  </header>
+
+  <!-- CONTENIDO -->
+  <main class="main-content">
+    <div id="alerta-container"></div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h2>👥 Gestión de Clientes</h2>
+        <div class="tabs">
+          <button class="tab activo" onclick="cambiarTab('lista')">📋 Lista</button>
+          <button class="tab" onclick="cambiarTab('nuevo')">➕ Nuevo cliente</button>
+          <button class="tab" onclick="cambiarTab('direcciones')">📍 Direcciones</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Lista de clientes ── -->
+    <div id="sec-lista" class="seccion activa">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>📋 Clientes Registrados</h2>
+          <div class="buscador">
+            <span>🔍</span>
+            <input type="text" id="buscar-cli" placeholder="Buscar cliente..." oninput="filtrarTabla('buscar-cli','tabla-clientes')">
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="tabla-contenedor">
+            <table class="tabla">
+              <thead>
+                <tr><th>#</th><th>Nombre</th><th>Email</th><th>Teléfono</th><th>RFC</th><th>F. Registro</th><th>Estado</th><th>Acciones</th></tr>
+              </thead>
+              <tbody id="tabla-clientes">
+                <tr><td colspan="8" style="text-align:center;padding:24px">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Nuevo cliente ── -->
+    <div id="sec-nuevo" class="seccion">
+      <div class="panel">
+        <div class="panel-header"><h2>➕ Registrar Cliente</h2></div>
+        <div class="panel-body">
+          <form onsubmit="guardarCliente(event)">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" id="cl-nombre" placeholder="Juan" required>
+              </div>
+              <div class="form-group">
+                <label>Apellido Paterno</label>
+                <input type="text" id="cl-ap" placeholder="García" required>
+              </div>
+              <div class="form-group">
+                <label>Apellido Materno</label>
+                <input type="text" id="cl-am" placeholder="López">
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="cl-email" placeholder="juan@correo.com" required>
+              </div>
+              <div class="form-group">
+                <label>Teléfono</label>
+                <input type="tel" id="cl-tel" placeholder="7710000001">
+              </div>
+              <div class="form-group">
+                <label>RFC</label>
+                <input type="text" id="cl-rfc" placeholder="GARL900101XXX">
+              </div>
+              <div class="form-group">
+                <label>Fecha de Nacimiento</label>
+                <input type="date" id="cl-fnac">
+              </div>
+            </div>
+            <div style="margin-top:20px;display:flex;gap:10px">
+              <button type="submit" class="btn btn-exito">💾 Guardar cliente</button>
+              <button type="reset" class="btn btn-gris">🔄 Limpiar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Direcciones ── -->
+    <div id="sec-direcciones" class="seccion">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>📍 Direcciones de Clientes</h2>
+          <button class="btn btn-primario btn-sm" onclick="abrirModal('modal-dir')">➕ Nueva dirección</button>
+        </div>
+        <div class="panel-body">
+          <div class="tabla-contenedor">
+            <table class="tabla">
+              <thead>
+                <tr><th>#</th><th>Cliente</th><th>Calle</th><th>Colonia</th><th>Municipio</th><th>Estado</th><th>CP</th><th>Principal</th><th>Acciones</th></tr>
+              </thead>
+              <tbody id="tabla-dirs">
+                <tr><td colspan="9" style="text-align:center;padding:24px">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal nueva dirección -->
+  <div class="modal-overlay" id="modal-dir">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>📍 Nueva Dirección</h3>
+        <button class="modal-close" onclick="cerrarModal('modal-dir')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Cliente</label>
+            <select id="d-cliente"><option value="">— Selecciona —</option></select>
+          </div>
+          <div class="form-group">
+            <label>Calle</label>
+            <input type="text" id="d-calle" placeholder="Av. Hidalgo">
+          </div>
+          <div class="form-group">
+            <label>Número Ext.</label>
+            <input type="text" id="d-next" placeholder="100">
+          </div>
+          <div class="form-group">
+            <label>Número Int.</label>
+            <input type="text" id="d-nint" placeholder="A">
+          </div>
+          <div class="form-group">
+            <label>Colonia</label>
+            <input type="text" id="d-col" placeholder="Centro">
+          </div>
+          <div class="form-group">
+            <label>Municipio</label>
+            <input type="text" id="d-mun" placeholder="Francisco I. Madero">
+          </div>
+          <div class="form-group">
+            <label>Estado</label>
+            <input type="text" id="d-edo" placeholder="Hidalgo">
+          </div>
+          <div class="form-group">
+            <label>Código Postal</label>
+            <input type="text" id="d-cp" placeholder="42660">
+          </div>
+          <div class="form-group full">
+            <label>Referencias</label>
+            <textarea id="d-ref" placeholder="Frente al parque, casa color azul..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>¿Es dirección principal?</label>
+            <select id="d-prin">
+              <option value="false">No</option>
+              <option value="true">Sí</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gris" onclick="cerrarModal('modal-dir')">Cancelar</button>
+        <button class="btn btn-exito" onclick="guardarDireccion()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal editar cliente -->
+  <div class="modal-overlay" id="modal-editar">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>✏️ Editar Cliente</h3>
+        <button class="modal-close" onclick="cerrarModal('modal-editar')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="ec-id">
+        <div class="form-grid">
+          <div class="form-group"><label>Nombre</label><input type="text" id="ec-nombre"></div>
+          <div class="form-group"><label>Apellido Paterno</label><input type="text" id="ec-ap"></div>
+          <div class="form-group"><label>Apellido Materno</label><input type="text" id="ec-am"></div>
+          <div class="form-group"><label>Email</label><input type="email" id="ec-email"></div>
+          <div class="form-group"><label>Teléfono</label><input type="tel" id="ec-tel"></div>
+          <div class="form-group"><label>RFC</label><input type="text" id="ec-rfc"></div>
+          <div class="form-group">
+            <label>Estado</label>
+            <select id="ec-activo">
+              <option value="true">Activo</option>
+              <option value="false">Inactivo</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gris" onclick="cerrarModal('modal-editar')">Cancelar</button>
+        <button class="btn btn-secundario" onclick="actualizarCliente()">✏️ Actualizar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="JS/app.js"></script>
+  <script>
+    Sesion.requerida();
+    Permisos.requerirModulo('clientes');
+
+    function cambiarTab(nombre) {
+      document.querySelectorAll('.seccion').forEach(s => s.classList.remove('activa'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('activo'));
+      document.getElementById(`sec-${nombre}`).classList.add('activa');
+      event.target.classList.add('activo');
+    }
+
+    // ── Cargar clientes ───────────────────────────────────
+    async function cargarClientes() {
+      try {
+        const clientes = await Api.get('/clientes/cliente/obtener');
+        const tbody    = document.getElementById('tabla-clientes');
+
+        // También llenar el select de direcciones
+        const selDir = document.getElementById('d-cliente');
+        selDir.innerHTML = '<option value="">— Selecciona —</option>';
+        clientes.forEach(c => selDir.add(new Option(`${c.nombre} ${c.apellido_paterno}`, c.id_cliente_PK)));
+
+        if (!clientes.length) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px">Sin clientes registrados.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = clientes.map((c, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td><strong>${c.nombre} ${c.apellido_paterno} ${c.apellido_materno ?? ''}</strong></td>
+            <td>${c.email}</td>
+            <td>${c.telefono ?? '—'}</td>
+            <td>${c.rfc ?? '—'}</td>
+            <td>${formatearFecha(c.fecha_registro)}</td>
+            <td><span class="badge ${c.activo ? 'badge-exito' : 'badge-peligro'}">${c.activo ? 'Activo' : 'Inactivo'}</span></td>
+            <td class="acciones-celda">
+              <button type="button" class="badge badge-advertencia btn-accion" onclick="abrirEditar(${JSON.stringify(c).replace(/"/g,'&quot;')})">Editar</button>
+              <button type="button" class="badge badge-peligro btn-accion" onclick="eliminarCliente(${c.id_cliente_PK})">Eliminar</button>
+            </td>
+          </tr>`).join('');
+      } catch(e) {
+        document.getElementById('tabla-clientes').innerHTML =
+          '<tr><td colspan="8" style="text-align:center;color:red;padding:16px">⚠️ Sin conexión con la API.</td></tr>';
+      }
+    }
+
+    // ── Cargar direcciones ────────────────────────────────
+    async function cargarDirecciones() {
+      try {
+        const dirs  = await Api.get('/clientes/direccion/obtener');
+        const tbody = document.getElementById('tabla-dirs');
+        if (!dirs.length) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px">Sin direcciones registradas.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = dirs.map((d, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${d.cliente ? d.cliente.nombre + ' ' + d.cliente.apellido_paterno : '—'}</td>
+            <td>${d.calle} ${d.numero_ext ?? ''}</td>
+            <td>${d.colonia ?? '—'}</td>
+            <td>${d.municipio ?? '—'}</td>
+            <td>${d.estado}</td>
+            <td>${d.cp}</td>
+            <td><span class="badge ${d.es_principal ? 'badge-exito' : 'badge-gris'}">${d.es_principal ? 'Sí' : 'No'}</span></td>
+            <td class="acciones-celda"><button type="button" class="badge badge-peligro btn-accion" onclick="eliminarDireccion(${d.id_direccion_PK})">Eliminar</button></td>
+          </tr>`).join('');
+      } catch(e) {
+        document.getElementById('tabla-dirs').innerHTML =
+          '<tr><td colspan="9" style="text-align:center;color:red;padding:16px">⚠️ Sin conexión con la API.</td></tr>';
+      }
+    }
+
+    // ── Guardar cliente ───────────────────────────────────
+    async function guardarCliente(e) {
+      e.preventDefault();
+      const cliente = {
+        nombre: document.getElementById('cl-nombre').value,
+        apellido_paterno: document.getElementById('cl-ap').value,
+        apellido_materno: document.getElementById('cl-am').value,
+        email:  document.getElementById('cl-email').value,
+        telefono: document.getElementById('cl-tel').value,
+        rfc:    document.getElementById('cl-rfc').value,
+        fecha_nacimiento: document.getElementById('cl-fnac').value,
+        activo: true
+      };
+      try {
+        const msg = await Api.post('/clientes/cliente/guardar', cliente);
+        mostrarAlerta(msg, 'exito');
+        e.target.reset();
+        cargarClientes();
+      } catch(err) { mostrarAlerta('Error al guardar cliente.', 'error'); }
+    }
+
+    // ── Editar cliente ────────────────────────────────────
+    function abrirEditar(c) {
+      document.getElementById('ec-id').value     = c.id_cliente_PK;
+      document.getElementById('ec-nombre').value = c.nombre;
+      document.getElementById('ec-ap').value     = c.apellido_paterno;
+      document.getElementById('ec-am').value     = c.apellido_materno ?? '';
+      document.getElementById('ec-email').value  = c.email;
+      document.getElementById('ec-tel').value    = c.telefono ?? '';
+      document.getElementById('ec-rfc').value    = c.rfc ?? '';
+      document.getElementById('ec-activo').value = String(c.activo);
+      abrirModal('modal-editar');
+    }
+
+    async function actualizarCliente() {
+      const cliente = {
+        id_cliente_PK:    parseInt(document.getElementById('ec-id').value),
+        nombre:           document.getElementById('ec-nombre').value,
+        apellido_paterno: document.getElementById('ec-ap').value,
+        apellido_materno: document.getElementById('ec-am').value,
+        email:            document.getElementById('ec-email').value,
+        telefono:         document.getElementById('ec-tel').value,
+        rfc:              document.getElementById('ec-rfc').value,
+        activo:           document.getElementById('ec-activo').value === 'true'
+      };
+      try {
+        const msg = await Api.put('/clientes/cliente/actualizar', cliente);
+        mostrarAlerta(msg, 'exito');
+        cerrarModal('modal-editar');
+        cargarClientes();
+      } catch(e) { mostrarAlerta('Error al actualizar.', 'error'); }
+    }
+
+    async function eliminarCliente(id) {
+      if (!confirm(`¿Eliminar cliente ID ${id}?`)) return;
+      try {
+        const msg = await Api.delete(`/clientes/cliente/eliminar/${id}`);
+        mostrarAlerta(msg, 'exito');
+        cargarClientes();
+      } catch(e) { mostrarAlerta('Error al eliminar.', 'error'); }
+    }
+
+    // ── Guardar dirección ─────────────────────────────────
+    async function guardarDireccion() {
+      const dir = {
+        cliente:    { id_cliente_PK: parseInt(document.getElementById('d-cliente').value) },
+        calle:      document.getElementById('d-calle').value,
+        numero_ext: document.getElementById('d-next').value,
+        numero_int: document.getElementById('d-nint').value,
+        colonia:    document.getElementById('d-col').value,
+        municipio:  document.getElementById('d-mun').value,
+        estado:     document.getElementById('d-edo').value,
+        cp:         document.getElementById('d-cp').value,
+        referencias:document.getElementById('d-ref').value,
+        es_principal: document.getElementById('d-prin').value === 'true'
+      };
+      try {
+        const msg = await Api.post('/clientes/direccion/guardar', dir);
+        mostrarAlerta(msg, 'exito');
+        cerrarModal('modal-dir');
+        cargarDirecciones();
+      } catch(e) { mostrarAlerta('Error al guardar dirección.', 'error'); }
+    }
+
+    async function eliminarDireccion(id) {
+      if (!confirm(`¿Eliminar dirección ID ${id}?`)) return;
+      try {
+        const msg = await Api.delete(`/clientes/direccion/eliminar/${id}`);
+        mostrarAlerta(msg, 'exito');
+        cargarDirecciones();
+      } catch(e) { mostrarAlerta('Error al eliminar.', 'error'); }
+    }
+
+    cargarClientes();
+    cargarDirecciones();
+  </script>
+</body>
+</html>

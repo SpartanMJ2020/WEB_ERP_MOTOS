@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERP Motos — Empleados</title>
+  <link rel="stylesheet" href="CSS/style.css">
+  <style>
+    :root { --modulo-color: var(--empleados-color); }
+    .panel-header h2 { color: var(--empleados-color); }
+    .topbar { border-bottom: 3px solid var(--empleados-color); }
+    .tabs { display:flex; gap:6px; flex-wrap:wrap; }
+    .tab { padding:8px 18px; border-radius:var(--radio); border:2px solid #ddd; background:#fff; cursor:pointer; font-size:.88rem; font-weight:600; transition:all var(--transicion); }
+    .tab.activo { border-color:var(--empleados-color); background:var(--empleados-color); color:#fff; }
+    .tab:hover:not(.activo) { border-color:var(--empleados-color); color:var(--empleados-color); }
+    .seccion { display:none; }
+    .seccion.activa { display:block; }
+    .empleado-avatar {
+      width:40px; height:40px; border-radius:50%;
+      background:var(--empleados-color); color:#fff;
+      display:inline-flex; align-items:center; justify-content:center;
+      font-weight:700; font-size:1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span style="font-size:1.6rem">🏍️</span>
+      <div><span>ERP MotoShop</span><small>Módulo: Empleados</small></div>
+    </div>
+    <nav><ul>
+      <li><a href="dashboard.html"><span class="icon">🏠</span><span>Dashboard</span></a></li>
+      <li class="sidebar-section">Módulos</li>
+      <li><a href="ventas.html"><span class="icon">💰</span><span>Ventas</span></a></li>
+      <li><a href="clientes.html"><span class="icon">👥</span><span>Clientes</span></a></li>
+      <li><a href="finanzas.html"><span class="icon">📊</span><span>Finanzas</span></a></li>
+      <li><a href="inventario.html"><span class="icon">📦</span><span>Inventario</span></a></li>
+      <li><a href="empleados.html" class="activo"><span class="icon">👔</span><span>Empleados</span></a></li>
+      <li><a href="proveedores.html"><span class="icon">🤵</span><span>Proveedores</span></a></li>
+    </ul></nav>
+    <div class="sidebar-footer">ERP Motos v1.0 · UPFIM</div>
+  </aside>
+
+  <header class="topbar">
+    <span class="topbar-titulo">👔 Módulo de Empleados</span>
+    <div class="topbar-usuario">
+      <div class="avatar" id="topbar-avatar">A</div>
+      <span id="topbar-nombre">Administrador</span>
+      <small id="topbar-rol" style="font-size:.75rem;opacity:.7;margin-left:6px"></small>
+      <button class="btn btn-peligro btn-sm" onclick="Sesion.cerrar()">⏻ Salir</button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div id="alerta-container"></div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h2>👔 Gestión de Empleados</h2>
+        <div class="tabs">
+          <button class="tab activo" onclick="cambiarTab('lista')">📋 Empleados</button>
+          <button class="tab" onclick="cambiarTab('nuevo')">➕ Nuevo empleado</button>
+          <button class="tab" onclick="cambiarTab('roles')">🛡️ Roles</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Lista de empleados ── -->
+    <div id="sec-lista" class="seccion activa">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>📋 Personal del Sistema</h2>
+          <div class="buscador">
+            <span>🔍</span>
+            <input type="text" id="buscar-emp" placeholder="Buscar empleado..." oninput="filtrarTabla('buscar-emp','tabla-empleados')">
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="tabla-contenedor">
+            <table class="tabla">
+              <thead>
+                <tr><th>#</th><th>Empleado</th><th>Rol</th><th>Email</th><th>Teléfono</th><th>Salario</th><th>F. Contrato</th><th>Estado</th><th>Acciones</th></tr>
+              </thead>
+              <tbody id="tabla-empleados">
+                <tr><td colspan="9" style="text-align:center;padding:24px">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Nuevo empleado ── -->
+    <div id="sec-nuevo" class="seccion">
+      <div class="panel">
+        <div class="panel-header"><h2>➕ Registrar Empleado</h2></div>
+        <div class="panel-body">
+          <form onsubmit="guardarEmpleado(event)">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" id="em-nombre" placeholder="Juan" required>
+              </div>
+              <div class="form-group">
+                <label>Apellido Paterno</label>
+                <input type="text" id="em-ap" placeholder="Pérez" required>
+              </div>
+              <div class="form-group">
+                <label>Apellido Materno</label>
+                <input type="text" id="em-am" placeholder="González">
+              </div>
+              <div class="form-group">
+                <label>Email (usuario de acceso)</label>
+                <input type="email" id="em-email" placeholder="juan@erpmotos.com" required>
+              </div>
+              <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="em-pass" placeholder="••••••••" required>
+              </div>
+              <div class="form-group">
+                <label>Teléfono</label>
+                <input type="tel" id="em-tel" placeholder="7711234567">
+              </div>
+              <div class="form-group">
+                <label>RFC</label>
+                <input type="text" id="em-rfc" placeholder="PEGJ900101XXX">
+              </div>
+              <div class="form-group">
+                <label>Rol</label>
+                <select id="em-rol" required>
+                  <option value="">— Selecciona rol —</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Salario ($)</label>
+                <input type="number" id="em-salario" min="0" step="0.01" placeholder="0.00">
+              </div>
+              <div class="form-group">
+                <label>Fecha de Contrato</label>
+                <input type="date" id="em-fcontrato" required>
+              </div>
+              <div class="form-group full">
+                <label>Dirección</label>
+                <textarea id="em-dir" placeholder="Calle, Número, Colonia, Municipio, Estado"></textarea>
+              </div>
+            </div>
+            <div style="margin-top:20px;display:flex;gap:10px">
+              <button type="submit" class="btn btn-exito">💾 Guardar empleado</button>
+              <button type="reset" class="btn btn-gris">🔄 Limpiar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Roles ── -->
+    <div id="sec-roles" class="seccion">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>🛡️ Roles del Sistema</h2>
+          <button class="btn btn-primario btn-sm" onclick="abrirModal('modal-rol')">➕ Nuevo rol</button>
+        </div>
+        <div class="panel-body">
+          <div class="tabla-contenedor">
+            <table class="tabla">
+              <thead><tr><th>#</th><th>Nombre</th><th>Descripción</th><th>Acciones</th></tr></thead>
+              <tbody id="tabla-roles">
+                <tr><td colspan="4" style="text-align:center;padding:24px">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal editar empleado -->
+  <div class="modal-overlay" id="modal-editar-emp">
+    <div class="modal">
+      <div class="modal-header"><h3>✏️ Editar Empleado</h3><button class="modal-close" onclick="cerrarModal('modal-editar-emp')">✕</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="ee-id">
+        <div class="form-grid">
+          <div class="form-group"><label>Nombre</label><input type="text" id="ee-nombre"></div>
+          <div class="form-group"><label>Apellido Paterno</label><input type="text" id="ee-ap"></div>
+          <div class="form-group"><label>Apellido Materno</label><input type="text" id="ee-am"></div>
+          <div class="form-group"><label>Email</label><input type="email" id="ee-email"></div>
+          <div class="form-group"><label>Teléfono</label><input type="tel" id="ee-tel"></div>
+          <div class="form-group"><label>Salario ($)</label><input type="number" id="ee-salario" step="0.01"></div>
+          <div class="form-group"><label>Rol</label><select id="ee-rol"></select></div>
+          <div class="form-group"><label>Estado</label>
+            <select id="ee-activo"><option value="true">Activo</option><option value="false">Inactivo</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gris" onclick="cerrarModal('modal-editar-emp')">Cancelar</button>
+        <button class="btn btn-secundario" onclick="actualizarEmpleado()">✏️ Actualizar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal nuevo rol -->
+  <div class="modal-overlay" id="modal-rol">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header"><h3>🛡️ Nuevo Rol</h3><button class="modal-close" onclick="cerrarModal('modal-rol')">✕</button></div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group"><label>Nombre del Rol</label><input type="text" id="rl-nombre" placeholder="Vendedor"></div>
+          <div class="form-group full"><label>Descripción</label><textarea id="rl-desc" placeholder="Permisos y funciones del rol..."></textarea></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gris" onclick="cerrarModal('modal-rol')">Cancelar</button>
+        <button class="btn btn-exito" onclick="guardarRol()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="JS/app.js"></script>
+  <script>
+    Sesion.requerida();
+    Permisos.requerirModulo('empleados');
+
+    let _roles = [];
+
+    function cambiarTab(nombre) {
+      document.querySelectorAll('.seccion').forEach(s => s.classList.remove('activa'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('activo'));
+      document.getElementById(`sec-${nombre}`).classList.add('activa');
+      event.target.classList.add('activo');
+    }
+
+    async function cargarRoles() {
+      try {
+        _roles = await Api.get('/empleados/rol/obtener');
+        const tbody = document.getElementById('tabla-roles');
+        tbody.innerHTML = _roles.map((r, i) => `
+          <tr>
+            <td>${i+1}</td>
+            <td><strong>${r.nombre}</strong></td>
+            <td>${r.descripcion ?? '—'}</td>
+            <td class="acciones-celda"><button type="button" class="badge badge-peligro btn-accion" onclick="eliminarRol(${r.id_rol_PK})">Eliminar</button></td>
+          </tr>`).join('');
+
+        // Llenar selects de rol
+        ['em-rol','ee-rol'].forEach(id => {
+          const s = document.getElementById(id);
+          if (!s) return;
+          s.innerHTML = '<option value="">— Selecciona —</option>';
+          _roles.forEach(r => s.add(new Option(r.nombre, r.id_rol_PK)));
+        });
+      } catch(e) { console.warn(e); }
+    }
+
+    async function cargarEmpleados() {
+      try {
+        const emps  = await Api.get('/empleados/empleado/obtener');
+        const tbody = document.getElementById('tabla-empleados');
+        if (!emps.length) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px">Sin empleados registrados.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = emps.map((e, i) => `
+          <tr>
+            <td>${i+1}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="empleado-avatar">${e.nombre[0].toUpperCase()}</div>
+                <div>
+                  <strong>${e.nombre} ${e.apellido_paterno}</strong>
+                  <div style="font-size:.78rem;color:var(--gris-texto)">${e.apellido_materno ?? ''}</div>
+                </div>
+              </div>
+            </td>
+            <td>${e.rol?.nombre ?? '—'}</td>
+            <td>${e.email}</td>
+            <td>${e.telefono ?? '—'}</td>
+            <td>${formatearMoneda(e.salario)}</td>
+            <td>${formatearFecha(e.fecha_contrato)}</td>
+            <td><span class="badge ${e.activo ? 'badge-exito' : 'badge-peligro'}">${e.activo ? 'Activo' : 'Inactivo'}</span></td>
+            <td class="acciones-celda">
+              <button type="button" class="badge badge-advertencia btn-accion" onclick="abrirEditarEmp(${JSON.stringify(e).replace(/"/g,'&quot;')})">Editar</button>
+              <button type="button" class="badge badge-peligro btn-accion" onclick="eliminarEmpleado(${e.id_empleado_PK})">Eliminar</button>
+            </td>
+          </tr>`).join('');
+      } catch(e) {
+        document.getElementById('tabla-empleados').innerHTML =
+          '<tr><td colspan="9" style="text-align:center;color:red;padding:16px">⚠️ Sin conexión con la API.</td></tr>';
+      }
+    }
+
+    // ── CRUD ─────────────────────────────────────────────
+    async function guardarEmpleado(e) {
+      e.preventDefault();
+      const emp = {
+        nombre:           document.getElementById('em-nombre').value,
+        apellido_paterno: document.getElementById('em-ap').value,
+        apellido_materno: document.getElementById('em-am').value,
+        email:            document.getElementById('em-email').value,
+        password_hash:    document.getElementById('em-pass').value,
+        telefono:         document.getElementById('em-tel').value,
+        rfc:              document.getElementById('em-rfc').value,
+        rol:              { id_rol_PK: parseInt(document.getElementById('em-rol').value) },
+        salario:          parseFloat(document.getElementById('em-salario').value) || 0,
+        fecha_contrato:   document.getElementById('em-fcontrato').value,
+        direccion:        document.getElementById('em-dir').value,
+        activo: true
+      };
+      try {
+        const msg = await Api.post('/empleados/empleado/guardar', emp);
+        mostrarAlerta(msg, 'exito');
+        e.target.reset();
+        cargarEmpleados();
+      } catch(err) { mostrarAlerta('Error al guardar empleado.', 'error'); }
+    }
+
+    function abrirEditarEmp(emp) {
+      document.getElementById('ee-id').value      = emp.id_empleado_PK;
+      document.getElementById('ee-nombre').value  = emp.nombre;
+      document.getElementById('ee-ap').value      = emp.apellido_paterno;
+      document.getElementById('ee-am').value      = emp.apellido_materno ?? '';
+      document.getElementById('ee-email').value   = emp.email;
+      document.getElementById('ee-tel').value     = emp.telefono ?? '';
+      document.getElementById('ee-salario').value = emp.salario;
+      document.getElementById('ee-activo').value  = String(emp.activo);
+      if (emp.rol) document.getElementById('ee-rol').value = emp.rol.id_rol_PK;
+      abrirModal('modal-editar-emp');
+    }
+
+    async function actualizarEmpleado() {
+      const emp = {
+        id_empleado_PK:   parseInt(document.getElementById('ee-id').value),
+        nombre:           document.getElementById('ee-nombre').value,
+        apellido_paterno: document.getElementById('ee-ap').value,
+        apellido_materno: document.getElementById('ee-am').value,
+        email:            document.getElementById('ee-email').value,
+        telefono:         document.getElementById('ee-tel').value,
+        salario:          parseFloat(document.getElementById('ee-salario').value) || 0,
+        rol:              { id_rol_PK: parseInt(document.getElementById('ee-rol').value) },
+        activo:           document.getElementById('ee-activo').value === 'true'
+      };
+      try {
+        const msg = await Api.put('/empleados/empleado/actualizar', emp);
+        mostrarAlerta(msg, 'exito');
+        cerrarModal('modal-editar-emp');
+        cargarEmpleados();
+      } catch(e) { mostrarAlerta('Error al actualizar.', 'error'); }
+    }
+
+    async function eliminarEmpleado(id) {
+      if (!confirm(`¿Eliminar empleado ID ${id}?`)) return;
+      try {
+        const msg = await Api.delete(`/empleados/empleado/eliminar/${id}`);
+        mostrarAlerta(msg, 'exito');
+        cargarEmpleados();
+      } catch(e) { mostrarAlerta('Error al eliminar.', 'error'); }
+    }
+
+    async function guardarRol() {
+      const r = { nombre: document.getElementById('rl-nombre').value, descripcion: document.getElementById('rl-desc').value };
+      try {
+        const msg = await Api.post('/empleados/rol/guardar', r);
+        mostrarAlerta(msg, 'exito');
+        cerrarModal('modal-rol');
+        cargarRoles();
+      } catch(e) { mostrarAlerta('Error al guardar rol.', 'error'); }
+    }
+
+    async function eliminarRol(id) {
+      if (!confirm(`¿Eliminar rol ID ${id}?`)) return;
+      try {
+        const msg = await Api.delete(`/empleados/rol/eliminar/${id}`);
+        mostrarAlerta(msg, 'exito');
+        cargarRoles();
+      } catch(e) { mostrarAlerta('Error al eliminar rol.', 'error'); }
+    }
+
+    // ── Init ──────────────────────────────────────────────
+    cargarRoles();
+    cargarEmpleados();
+  </script>
+</body>
+</html>

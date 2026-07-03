@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERP Motos — Inventario</title>
+  <link rel="stylesheet" href="CSS/style.css">
+  <style>
+    :root { --modulo-color: var(--inventario-color); }
+    .panel-header h2 { color: var(--inventario-color); }
+    .topbar { border-bottom: 3px solid var(--inventario-color); }
+    .tabs { display:flex; gap:6px; flex-wrap:wrap; }
+    .tab { padding:8px 18px; border-radius:var(--radio); border:2px solid #ddd; background:#fff; cursor:pointer; font-size:.88rem; font-weight:600; transition:all var(--transicion); }
+    .tab.activo { border-color:var(--inventario-color); background:var(--inventario-color); color:#fff; }
+    .tab:hover:not(.activo) { border-color:var(--inventario-color); color:var(--inventario-color); }
+    .seccion { display:none; }
+    .seccion.activa { display:block; }
+    .stock-bajo { color: #c0392b; font-weight:700; }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span style="font-size:1.6rem">🏍️</span>
+      <div><span>ERP MotoShop</span><small>Módulo: Inventario</small></div>
+    </div>
+    <nav><ul>
+      <li><a href="dashboard.html"><span class="icon">🏠</span><span>Dashboard</span></a></li>
+      <li class="sidebar-section">Módulos</li>
+      <li><a href="ventas.html"><span class="icon">💰</span><span>Ventas</span></a></li>
+      <li><a href="clientes.html"><span class="icon">👥</span><span>Clientes</span></a></li>
+      <li><a href="finanzas.html"><span class="icon">📊</span><span>Finanzas</span></a></li>
+      <li><a href="inventario.html" class="activo"><span class="icon">📦</span><span>Inventario</span></a></li>
+      <li><a href="empleados.html"><span class="icon">👔</span><span>Empleados</span></a></li>
+      <li><a href="proveedores.html"><span class="icon">🤵</span><span>Proveedores</span></a></li>
+    </ul></nav>
+    <div class="sidebar-footer">ERP Motos v1.0 · UPFIM</div>
+  </aside>
+
+  <header class="topbar">
+    <span class="topbar-titulo">📦 Módulo de Inventario</span>
+    <div class="topbar-usuario">
+      <div class="avatar" id="topbar-avatar">A</div>
+      <span id="topbar-nombre">Administrador</span>
+      <small id="topbar-rol" style="font-size:.75rem;opacity:.7;margin-left:6px"></small>
+      <button class="btn btn-peligro btn-sm" onclick="Sesion.cerrar()">⏻ Salir</button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div id="notif-stock-banner" style="display:none"></div>
+    <div id="alerta-container"></div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h2>📦 Gestión de Inventario</h2>
+        <div class="tabs">
+          <button class="tab activo" onclick="cambiarTab('motos')">🏍️ Motos</button>
+          <button class="tab" onclick="cambiarTab('accesorios')">🪖 Accesorios</button>
+          <button class="tab" onclick="cambiarTab('catalogos')">🗂️ Catálogos</button>
+          <button class="tab" onclick="cambiarTab('pedidos')">📦 Pedidos</button>
+          <button class="tab" onclick="cambiarTab('movimientos')">🔄 Movimientos</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Motos ── -->
+    <div id="sec-motos" class="seccion activa">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>🏍️ Catálogo de Motos</h2>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="buscador">
+              <span>🔍</span>
+              <input type="text" id="buscar-moto" placeholder="Buscar moto..." oninput="filtrarTabla('buscar-moto','tabla-motos')">
+            </div>
+            <button class="btn btn-primario btn-sm" onclick="abrirNuevaMoto()">➕ Nueva moto</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="tabla-contenedor">
+            <table class="tabla">
+              <thead>
+                <tr><th>#</th><th>Marca</th><th>Modelo</th><th>Proveedor</th><th>Año</th><th>Color</th><th>CC</th><th>Costo</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr>
+              </thead>
+              <tbody id="tabla-motos">
+                <tr><td colspan="11" style="text-align:center;padding:24px">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Accesorios ── -->
+    <div id="sec-accesorios" class="seccion">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>🪖 Accesorios</h2>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="buscador">
+              <span>🔍</span>
+              <input type="text" id="buscar-acc" placeholder="Buscar accesorio..." oninput="filtrarTabla('buscar-acc','tabla-accesorios')">
+            </div>
+            <button class="btn btn-primario btn-sm" onclick="abrirNuevoAccesorio()">➕ Nuevo accesorio</button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="tabla-contenedor">
+            <table class="tabla">
+              <thead>
+                <tr><th>#</th><th>Nombre</th><th>Proveedor</th><th>Categoría</th><th>Costo</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr>
+              </thead>
+              <tbody id="tabla-accesorios">
+                <tr><td colspan="8" style="text-align:center;padding:24px">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Catálogos ── -->
+    <div id="sec-catalogos" class="seccion">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <!-- Marcas -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2>🏷️ Marcas</h2>
+            <button class="btn btn-primario btn-sm" onclick="abrirNuevaMarca()">➕ Agregar</button>
+          </div>
+          <div class="panel-body">
+            <table class="tabla">
+              <thead><tr><th>#</th><th>Nombre</th><th>País</th><th></th></tr></thead>
+              <tbody id="tabla-marcas"><tr><td colspan="4" style="text-align:center;padding:16px">Cargando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Categorías -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2>📂 Categorías</h2>
+            <button class="btn btn-primario btn-sm" onclick="abrirNuevaCategoria()">➕ Agregar</button>
+          </div>
+          <div class="panel-body">
+            <table class="tabla">
+              <thead><tr><th>#</th><th>Nombre</th><th>Descripción</th><th></th></tr></thead>
+              <tbody id="tabla-categorias"><tr><td colspan="4" style="text-align:center;padding:16px">Cargando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Pedidos ── -->
+    <div id="sec-pedidos" class="seccion">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>📦 Solicitar Pedido</h2>
+        </div>
+        <div class="panel-body">
+          <div class="form-grid" style="grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px">
+            <div class="form-group">
+              <label>Proveedor</label>
+              <select id="pedido-proveedor" onchange="actualizarProductosPorProveedor()">
+                <option value="">— Selecciona un proveedor —</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Contacto del proveedor</label>
+              <div id="pedido-contacto" style="padding:12px; background:#f9f9f9; border:1px solid #ddd; border-radius:8px; min-height:84px">Selecciona un proveedor para ver datos.</div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><h3>Productos disponibles</h3></div>
+            <div class="panel-body">
+              <div class="tabla-contenedor">
+                <table class="tabla">
+                  <thead><tr><th>#</th><th>Tipo</th><th>Producto</th><th>Stock</th><th>Costo</th></tr></thead>
+                  <tbody id="tabla-productos-proveedor"><tr><td colspan="5" style="text-align:center;padding:24px">Selecciona un proveedor.</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="panel" style="margin-top:20px">
+            <div class="panel-header"><h3>Formulario de solicitud</h3></div>
+            <div class="panel-body">
+              <div class="form-grid" style="grid-template-columns:1fr 1fr; gap:20px">
+                <div class="form-group">
+                  <label>Producto</label>
+                  <select id="pedido-producto"><option value="">— Selecciona un producto —</option></select>
+                </div>
+                <div class="form-group"><label>Cantidad</label><input type="number" id="pedido-cantidad" min="1" value="1"></div>
+                <div class="form-group full"><label>Observaciones</label><textarea id="pedido-observaciones" placeholder="Notas para el proveedor..."></textarea></div>
+              </div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+                <button class="btn btn-exito" onclick="enviarPedido()">✉️ Enviar solicitud</button>
+                <button class="btn btn-gris" onclick="limpiarPedido()">Limpiar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Movimientos ── -->
+    <div id="sec-movimientos" class="seccion">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>🔄 Movimientos de Inventario</h2>
+          <button class="btn btn-primario btn-sm" onclick="abrirModal('modal-mov')">➕ Registrar movimiento</button>
+        </div>
+        <div class="panel-body">
+          <div class="tabla-contenedor">
+            <table class="tabla">
+              <thead>
+                <tr><th>#</th><th>Tipo Producto</th><th>ID Producto</th><th>Empleado</th><th>Tipo</th><th>Cantidad</th><th>Motivo</th><th>Fecha</th></tr>
+              </thead>
+              <tbody id="tabla-movimientos">
+                <tr><td colspan="8" style="text-align:center;padding:24px">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal nueva moto -->
+  <div class="modal-overlay" id="modal-moto">
+    <div class="modal">
+      <div class="modal-header"><h3 id="modal-moto-titulo">🏍️ Nueva Moto</h3><button class="modal-close" onclick="cerrarModal('modal-moto')">✕</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="mo-id">
+        <div class="form-grid">
+          <div class="form-group"><label>Marca</label><select id="mo-marca"><option value="">— Selecciona —</option></select></div>
+          <div class="form-group"><label>Categoría</label><select id="mo-cat"><option value="">— Selecciona —</option></select></div>
+          <div class="form-group"><label>Modelo</label><input type="text" id="mo-modelo" placeholder="CBR 600RR"></div>
+          <div class="form-group"><label>Año</label><input type="number" id="mo-anio" min="2000" max="2030" value="2025"></div>
+          <div class="form-group"><label>Cilindraje (cc)</label><input type="number" id="mo-cc" min="50"></div>
+          <div class="form-group"><label>Color</label><input type="text" id="mo-color" placeholder="Rojo"></div>
+          <div class="form-group"><label>Precio Costo ($)</label><input type="number" id="mo-costo" min="0" step="0.01"></div>
+          <div class="form-group"><label>Precio Venta ($)</label><input type="number" id="mo-precio" min="0" step="0.01"></div>
+          <div class="form-group"><label>Stock</label><input type="number" id="mo-stock" min="0" value="0"></div>
+          <div class="form-group">
+            <label>Estado</label>
+            <select id="mo-activo"><option value="true">Activo</option><option value="false">Inactivo</option></select>
+          </div>
+          <div class="form-group"><label>Núm. Serie</label><input type="text" id="mo-serie" placeholder="VIN-XXXXX"></div>
+          <div class="form-group full"><label>Descripción</label><textarea id="mo-desc" placeholder="Descripción de la moto..."></textarea></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gris" onclick="cerrarModal('modal-moto')">Cancelar</button>
+        <button class="btn btn-exito" id="btn-guardar-moto" onclick="guardarMoto()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal nuevo accesorio -->
+  <div class="modal-overlay" id="modal-accesorio">
+    <div class="modal">
+      <div class="modal-header"><h3 id="modal-accesorio-titulo">🪖 Nuevo Accesorio</h3><button class="modal-close" onclick="cerrarModal('modal-accesorio')">✕</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="ac-id">
+        <div class="form-grid">
+          <div class="form-group"><label>Nombre</label><input type="text" id="ac-nombre" placeholder="Casco integral"></div>
+          <div class="form-group"><label>Categoría</label><input type="text" id="ac-cat" placeholder="Protección"></div>
+          <div class="form-group"><label>Precio Costo ($)</label><input type="number" id="ac-costo" min="0" step="0.01"></div>
+          <div class="form-group"><label>Precio Venta ($)</label><input type="number" id="ac-precio" min="0" step="0.01"></div>
+          <div class="form-group"><label>Stock</label><input type="number" id="ac-stock" min="0" value="0"></div>
+          <div class="form-group">
+            <label>Estado</label>
+            <select id="ac-activo"><option value="true">Activo</option><option value="false">Inactivo</option></select>
+          </div>
+          <div class="form-group full"><label>Descripción</label><textarea id="ac-desc" placeholder="Descripción..."></textarea></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gris" onclick="cerrarModal('modal-accesorio')">Cancelar</button>
+        <button class="btn btn-exito" onclick="guardarAccesorio()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal nueva marca -->
+  <div class="modal-overlay" id="modal-marca">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header"><h3 id="modal-marca-titulo">🏷️ Nueva Marca</h3><button class="modal-close" onclick="cerrarModal('modal-marca')">✕</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="mk-id">
+        <div class="form-grid">
+          <div class="form-group"><label>Nombre</label><input type="text" id="mk-nombre"></div>
+          <div class="form-group"><label>País de Origen</label><input type="text" id="mk-pais"></div>
+          <div class="form-group full"><label>Descripción</label><textarea id="mk-desc"></textarea></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gris" onclick="cerrarModal('modal-marca')">Cancelar</button>
+        <button class="btn btn-exito" onclick="guardarMarca()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal nueva categoría -->
+  <div class="modal-overlay" id="modal-cat">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header"><h3 id="modal-cat-titulo">📂 Nueva Categoría</h3><button class="modal-close" onclick="cerrarModal('modal-cat')">✕</button></div>
+      <div class="modal-body">
+        <input type="hidden" id="ct-id">
+        <div class="form-grid">
+          <div class="form-group"><label>Nombre</label><input type="text" id="ct-nombre"></div>
+          <div class="form-group full"><label>Descripción</label><textarea id="ct-desc"></textarea></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gris" onclick="cerrarModal('modal-cat')">Cancelar</button>
+        <button class="btn btn-exito" onclick="guardarCategoria()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal movimiento -->
+  <div class="modal-overlay" id="modal-mov">
+    <div class="modal" style="max-width:460px">
+      <div class="modal-header"><h3>🔄 Registrar Movimiento</h3><button class="modal-close" onclick="cerrarModal('modal-mov')">✕</button></div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group"><label>Tipo de Producto</label>
+            <select id="mv-tipo" onchange="cargarProductosMovimiento()">
+              <option value="moto">Moto</option>
+              <option value="accesorio">Accesorio</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Producto</label>
+            <select id="mv-producto"><option value="">— Selecciona producto —</option></select>
+          </div>
+          <div class="form-group"><label>Empleado</label><select id="mv-emp"><option value="">— Selecciona —</option></select></div>
+          <div class="form-group"><label>Tipo Movimiento</label>
+            <select id="mv-tmov">
+              <option value="entrada">Entrada</option>
+              <option value="salida">Salida</option>
+              <option value="ajuste">Ajuste</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Cantidad</label><input type="number" id="mv-cant" min="1" value="1">
+            <small style="color:var(--gris-texto);font-size:.75rem">En ajuste: cantidad = nuevo stock total</small>
+          </div>
+          <div class="form-group full"><label>Motivo</label><textarea id="mv-motivo" placeholder="Descripción del movimiento..."></textarea></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gris" onclick="cerrarModal('modal-mov')">Cancelar</button>
+        <button class="btn btn-exito" onclick="guardarMovimiento()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="JS/app.js"></script>
+  <script>
+    Sesion.requerida();
+    Permisos.requerirModulo('inventario');
+
+    function cambiarTab(nombre) {
+      document.querySelectorAll('.seccion').forEach(s => s.classList.remove('activa'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('activo'));
+      document.getElementById(`sec-${nombre}`).classList.add('activa');
+      event.target.classList.add('activo');
+    }
+
+    let catalogoMotos = [];
+    let catalogoAccesorios = [];
+    let proveedoresInventario = [];
+    let proveedorPorMoto = new Map();
+    let proveedorPorAccesorio = new Map();
+
+    // ── Modales moto ──────────────────────────────────────
+    function abrirNuevaMoto() {
+      document.getElementById('mo-id').value = '';
+      document.getElementById('modal-moto-titulo').textContent = '🏍️ Nueva Moto';
+      document.getElementById('btn-guardar-moto').textContent = '💾 Guardar';
+      ['mo-modelo','mo-color','mo-serie','mo-desc'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('mo-anio').value = 2025;
+      document.getElementById('mo-cc').value = '';
+      document.getElementById('mo-costo').value = '';
+      document.getElementById('mo-precio').value = '';
+      document.getElementById('mo-stock').value = 0;
+      document.getElementById('mo-activo').value = 'true';
+      document.getElementById('mo-marca').value = '';
+      document.getElementById('mo-cat').value = '';
+      abrirModal('modal-moto');
+    }
+
+    function abrirEditarMoto(m) {
+      document.getElementById('mo-id').value = m.id_moto_PK;
+      document.getElementById('modal-moto-titulo').textContent = '🏍️ Editar Moto';
+      document.getElementById('btn-guardar-moto').textContent = '💾 Actualizar';
+      document.getElementById('mo-marca').value = m.marca?.id_marca_PK ?? '';
+      document.getElementById('mo-cat').value = m.categoria?.id_categoria_PK ?? '';
+      document.getElementById('mo-modelo').value = m.modelo ?? '';
+      document.getElementById('mo-anio').value = m.anio ?? 2025;
+      document.getElementById('mo-cc').value = m.cilindraje ?? '';
+      document.getElementById('mo-color').value = m.color ?? '';
+      document.getElementById('mo-costo').value = m.precio_costo ?? '';
+      document.getElementById('mo-precio').value = m.precio_venta ?? '';
+      document.getElementById('mo-stock').value = m.stock ?? 0;
+      document.getElementById('mo-serie').value = m.num_serie ?? '';
+      document.getElementById('mo-desc').value = m.descripcion ?? '';
+      document.getElementById('mo-activo').value = String(m.activo);
+      abrirModal('modal-moto');
+    }
+
+    function abrirNuevoAccesorio() {
+      document.getElementById('ac-id').value = '';
+      document.getElementById('modal-accesorio-titulo').textContent = '🪖 Nuevo Accesorio';
+      ['ac-nombre','ac-cat','ac-costo','ac-precio','ac-desc'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('ac-stock').value = 0;
+      document.getElementById('ac-activo').value = 'true';
+      abrirModal('modal-accesorio');
+    }
+
+    function abrirEditarAccesorio(a) {
+      document.getElementById('ac-id').value = a.id_accesorio_PK;
+      document.getElementById('modal-accesorio-titulo').textContent = '🪖 Editar Accesorio';
+      document.getElementById('ac-nombre').value = a.nombre ?? '';
+      document.getElementById('ac-cat').value = a.categoria ?? '';
+      document.getElementById('ac-costo').value = a.precio_costo ?? '';
+      document.getElementById('ac-precio').value = a.precio_venta ?? '';
+      document.getElementById('ac-stock').value = a.stock ?? 0;
+      document.getElementById('ac-desc').value = a.descripcion ?? '';
+      document.getElementById('ac-activo').value = String(a.activo);
+      abrirModal('modal-accesorio');
+    }
+
+    function abrirNuevaMarca() {
+      document.getElementById('mk-id').value = '';
+      document.getElementById('modal-marca-titulo').textContent = '🏷️ Nueva Marca';
+      ['mk-nombre','mk-pais','mk-desc'].forEach(id => document.getElementById(id).value = '');
+      abrirModal('modal-marca');
+    }
+
+    function abrirEditarMarca(m) {
+      document.getElementById('mk-id').value = m.id_marca_PK;
+      document.getElementById('modal-marca-titulo').textContent = '🏷️ Editar Marca';
+      document.getElementById('mk-nombre').value = m.nombre ?? '';
+      document.getElementById('mk-pais').value = m.pais_origen ?? '';
+      document.getElementById('mk-desc').value = m.descripcion ?? '';
+      abrirModal('modal-marca');
+    }
+
+    function abrirNuevaCategoria() {
+      document.getElementById('ct-id').value = '';
+      document.getElementById('modal-cat-titulo').textContent = '📂 Nueva Categoría';
+      document.getElementById('ct-nombre').value = '';
+      document.getElementById('ct-desc').value = '';
+      abrirModal('modal-cat');
+    }
+
+    function abrirEditarCategoria(c) {
+      document.getElementById('ct-id').value = c.id_categoria_PK;
+      document.getElementById('modal-cat-titulo').textContent = '📂 Editar Categoría';
+      document.getElementById('ct-nombre').value = c.nombre ?? '';
+      document.getElementById('ct-desc').value = c.descripcion ?? '';
+      abrirModal('modal-cat');
+    }
+
+    function cargarProductosMovimiento() {
+      const tipo = document.getElementById('mv-tipo').value;
+      const sel  = document.getElementById('mv-producto');
+      sel.innerHTML = '<option value="">— Selecciona producto —</option>';
+      const lista = tipo === 'moto' ? catalogoMotos : catalogoAccesorios;
+      lista.forEach(p => {
+        const id  = tipo === 'moto' ? p.id_moto_PK : p.id_accesorio_PK;
+        const nom = tipo === 'moto'
+          ? `${p.marca?.nombre ?? ''} ${p.modelo} (stock: ${p.stock})`
+          : `${p.nombre} (stock: ${p.stock})`;
+        sel.add(new Option(nom.trim(), id));
+      });
+    }
+
+    // ── Carga de datos ────────────────────────────────────
+    async function cargarMotos() {
+      if (!proveedorPorMoto.size && !proveedoresInventario.length) await cargarProveedoresParaPedidos();
+      console.log('🔄 Iniciando cargarMotos()...');
+      try {
+        console.log('📡 Descargando motos de la API...');
+        catalogoMotos = await Api.get('/inventario/moto/obtener');
+        console.log('✅ Motos descargadas:', catalogoMotos);
+        
+        const tbody = document.getElementById('tabla-motos');
+        console.log('🔍 tbody encontrado?', tbody);
+        
+        if (!catalogoMotos.length) { 
+          console.log('⚠️ Lista de motos vacía');
+          tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:24px">Sin motos registradas.</td></tr>'; 
+          return; 
+        }
+        
+        console.log('📝 Renderizando', catalogoMotos.length, 'motos...');
+        tbody.innerHTML = catalogoMotos.map((m, i) => {
+          const proveedor = proveedorPorMoto.get(m.id_moto_PK);
+          const proveedorTexto = proveedor ? proveedor : '<span class="badge badge-peligro">Sin proveedor</span>';
+          return `
+          <tr>
+            <td>${i+1}</td>
+            <td>${m.marca?.nombre ?? '—'}</td>
+            <td><strong>${m.modelo}</strong></td>
+            <td>${proveedorTexto}</td>
+            <td>${m.anio}</td>
+            <td>${m.color ?? '—'}</td>
+            <td>${m.cilindraje ? m.cilindraje + ' cc' : '—'}</td>
+            <td>${formatearMoneda(m.precio_costo)}</td>
+            <td>${formatearMoneda(m.precio_venta)}</td>
+            <td class="${m.stock < 8 ? 'stock-bajo' : ''}">${m.stock}</td>
+            <td><span class="badge ${m.activo ? 'badge-exito' : 'badge-peligro'}">${m.activo ? 'Activo' : 'Inactivo'}</span></td>
+            <td class="acciones-celda">
+              <button type="button" class="badge badge-advertencia btn-accion" onclick="abrirEditarMoto(${JSON.stringify(m).replace(/"/g,'&quot;')})">Editar</button>
+              <button type="button" class="badge badge-peligro btn-accion" onclick="eliminarMoto(${m.id_moto_PK})">Eliminar</button>
+            </td>
+          </tr>`;
+        }).join('');
+        console.log('✅ Motos renderizadas correctamente');
+      } catch(e) {
+        console.error('❌ Error en cargarMotos():', e);
+        document.getElementById('tabla-motos').innerHTML =
+          '<tr><td colspan="11" style="text-align:center;color:red;padding:16px">⚠️ Error al cargar motos: ' + (e.message || 'Sin conexión con la API') + '</td></tr>';
+      }
+    }
+
+    async function cargarMarcas() {
+      try {
+        const marcas = await Api.get('/inventario/marca/obtener');
+        // Llenar select del modal moto
+        const selMarca = document.getElementById('mo-marca');
+        selMarca.innerHTML = '<option value="">— Selecciona —</option>';
+        marcas.forEach(m => selMarca.add(new Option(m.nombre, m.id_marca_PK)));
+
+        const tbody = document.getElementById('tabla-marcas');
+        tbody.innerHTML = marcas.map((m, i) => `
+          <tr>
+            <td>${i+1}</td><td>${m.nombre}</td><td>${m.pais_origen ?? '—'}</td>
+            <td class="acciones-celda">
+              <button type="button" class="badge badge-advertencia btn-accion" onclick="abrirEditarMarca(${JSON.stringify(m).replace(/"/g,'&quot;')})">Editar</button>
+              <button type="button" class="badge badge-peligro btn-accion" onclick="eliminarMarca(${m.id_marca_PK})">Eliminar</button>
+            </td>
+          </tr>`).join('');
+      } catch(e) { console.warn(e); }
+    }
+
+    async function cargarCategorias() {
+      try {
+        const cats = await Api.get('/inventario/categoria/obtener');
+        const selCat = document.getElementById('mo-cat');
+        selCat.innerHTML = '<option value="">— Selecciona —</option>';
+        cats.forEach(c => selCat.add(new Option(c.nombre, c.id_categoria_PK)));
+
+        const tbody = document.getElementById('tabla-categorias');
+        tbody.innerHTML = cats.map((c, i) => `
+          <tr>
+            <td>${i+1}</td><td>${c.nombre}</td><td>${c.descripcion ?? '—'}</td>
+            <td class="acciones-celda">
+              <button type="button" class="badge badge-advertencia btn-accion" onclick="abrirEditarCategoria(${JSON.stringify(c).replace(/"/g,'&quot;')})">Editar</button>
+              <button type="button" class="badge badge-peligro btn-accion" onclick="eliminarCategoria(${c.id_categoria_PK})">Eliminar</button>
+            </td>
+          </tr>`).join('');
+      } catch(e) { console.warn(e); }
+    }
+
+    async function cargarAccesorios() {
+      if (!proveedorPorAccesorio.size && !proveedoresInventario.length) await cargarProveedoresParaPedidos();
+      console.log('🔄 Iniciando cargarAccesorios()...');
+      try {
+        console.log('📡 Descargando accesorios de la API...');
+        catalogoAccesorios = await Api.get('/inventario/accesorio/obtener');
+        console.log('✅ Accesorios descargados:', catalogoAccesorios);
+        
+        const tbody = document.getElementById('tabla-accesorios');
+        console.log('🔍 tbody encontrado?', tbody);
+        
+        if (!catalogoAccesorios.length) { 
+          console.log('⚠️ Lista de accesorios vacía');
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px">Sin accesorios.</td></tr>'; 
+          return; 
+        }
+        
+        console.log('📝 Renderizando', catalogoAccesorios.length, 'accesorios...');
+        tbody.innerHTML = catalogoAccesorios.map((a, i) => {
+          const proveedor = proveedorPorAccesorio.get(a.id_accesorio_PK);
+          const proveedorTexto = proveedor ? proveedor : '<span class="badge badge-peligro">Sin proveedor</span>';
+          return `
+          <tr>
+            <td>${i+1}</td><td><strong>${a.nombre}</strong></td><td>${proveedorTexto}</td><td>${a.categoria ?? '—'}</td>
+            <td>${formatearMoneda(a.precio_costo)}</td><td>${formatearMoneda(a.precio_venta)}</td>
+            <td class="${a.stock < 8 ? 'stock-bajo' : ''}">${a.stock}</td>
+            <td><span class="badge ${a.activo ? 'badge-exito' : 'badge-peligro'}">${a.activo ? 'Activo' : 'Inactivo'}</span></td>
+            <td class="acciones-celda">
+              <button type="button" class="badge badge-advertencia btn-accion" onclick="abrirEditarAccesorio(${JSON.stringify(a).replace(/"/g,'&quot;')})">Editar</button>
+              <button type="button" class="badge badge-peligro btn-accion" onclick="eliminarAccesorio(${a.id_accesorio_PK})">Eliminar</button>
+            </td>
+          </tr>`;
+        }).join('');
+        console.log('✅ Accesorios renderizados correctamente');
+      } catch(e) {
+        console.error('❌ Error en cargarAccesorios():', e);
+        document.getElementById('tabla-accesorios').innerHTML =
+          '<tr><td colspan="8" style="text-align:center;color:red;padding:16px">⚠️ Error al cargar accesorios: ' + (e.message || 'Sin conexión con la API') + '</td></tr>';
+      }
+    }
+
+    async function cargarMovimientos() {
+      try {
+        const movs  = await Api.get('/inventario/movimiento/obtener');
+        const tbody = document.getElementById('tabla-movimientos');
+        if (!movs.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px">Sin movimientos.</td></tr>'; return; }
+        tbody.innerHTML = movs.map((m, i) => `
+          <tr>
+            <td>${i+1}</td><td>${m.tipo_producto}</td><td>${m.id_producto_ref}</td>
+            <td>${m.empleado?.nombre ?? '—'}</td>
+            <td><span class="badge ${m.tipo_movimiento === 'entrada' ? 'badge-exito' : m.tipo_movimiento === 'salida' ? 'badge-peligro' : 'badge-advertencia'}">${m.tipo_movimiento}</span></td>
+            <td>${m.cantidad}</td><td>${m.motivo ?? '—'}</td>
+            <td>${formatearFecha(m.fecha_movimiento)}</td>
+          </tr>`).join('');
+      } catch(e) { console.warn(e); }
+    }
+
+    async function cargarEmpleadosSelect() {
+      try {
+        const emps = await Api.get('/empleados/empleado/obtener');
+        const sel  = document.getElementById('mv-emp');
+        sel.innerHTML = '<option value="">— Selecciona —</option>';
+        emps.forEach(e => sel.add(new Option(`${e.nombre} ${e.apellido_paterno}`, e.id_empleado_PK)));
+        const usuario = Sesion.obtener();
+        if (usuario?.id_empleado) sel.value = usuario.id_empleado;
+      } catch(e) { console.warn(e); }
+    }
+
+    async function cargarProveedoresParaPedidos() {
+      try {
+        proveedoresInventario = await Api.get('/inventario/provedor/obtener');
+        proveedorPorMoto = new Map();
+        proveedorPorAccesorio = new Map();
+        const select = document.getElementById('pedido-proveedor');
+        select.innerHTML = '<option value="">— Selecciona un proveedor —</option>';
+        proveedoresInventario.forEach(p => {
+          const nombre = `${p.nombre ?? ''} ${p.apellido_paterno ?? ''}`.trim() || `Proveedor ${p.id_provedor_PK}`;
+          select.add(new Option(nombre, p.id_provedor_PK));
+          const motoFk = p.moto?.id_moto_PK ?? p.moto_FK ?? p.motoFk ?? p.motoId;
+          const accesorioFk = p.accesorio?.id_accesorio_PK ?? p.accesorio_FK ?? p.accesorioFk ?? p.accesorioId;
+          if (motoFk) proveedorPorMoto.set(motoFk, nombre);
+          if (accesorioFk) proveedorPorAccesorio.set(accesorioFk, nombre);
+        });
+      } catch(e) {
+        console.warn('No fue posible cargar proveedores para pedidos.', e);
+        document.getElementById('pedido-proveedor').innerHTML = '<option value="">No se pudieron cargar proveedores</option>';
+      }
+    }
+
+    function actualizarProductosPorProveedor() {
+      const idProveedor = parseInt(document.getElementById('pedido-proveedor').value);
+      const contacto = document.getElementById('pedido-contacto');
+      const tbody = document.getElementById('tabla-productos-proveedor');
+      const productoSelect = document.getElementById('pedido-producto');
+      productoSelect.innerHTML = '<option value="">— Selecciona un producto —</option>';
+      if (!idProveedor) {
+        contacto.innerHTML = 'Selecciona un proveedor para ver datos.';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px">Selecciona un proveedor.</td></tr>';
+        return;
+      }
+      const proveedor = proveedoresInventario.find(p => p.id_provedor_PK === idProveedor);
+      if (!proveedor) {
+        contacto.innerHTML = 'Proveedor no encontrado.';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px">Proveedor no encontrado.</td></tr>';
+        return;
+      }
+      contacto.innerHTML = `
+        <div><strong>${proveedor.nombre ?? ''} ${proveedor.apellido_paterno ?? ''}</strong></div>
+        <div>Email: ${proveedor.email ?? 'No disponible'}</div>
+        <div>Teléfono: ${proveedor.telefono ?? 'No disponible'}</div>
+        <div>RFC: ${proveedor.rfc ?? 'No disponible'}</div>
+      `;
+      const productos = [];
+      if (proveedor.moto) {
+        const moto = catalogoMotos.find(m => m.id_moto_PK === proveedor.moto.id_moto_PK);
+        productos.push({ tipo: 'Moto', item: moto ?? proveedor.moto });
+      }
+      if (proveedor.accesorio) {
+        const acc = catalogoAccesorios.find(a => a.id_accesorio_PK === proveedor.accesorio.id_accesorio_PK);
+        productos.push({ tipo: 'Accesorio', item: acc ?? proveedor.accesorio });
+      }
+      if (!productos.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px">Este proveedor no tiene productos asociados.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = productos.map((prod, index) => {
+        const item = prod.item;
+        const nombre = prod.tipo === 'Moto'
+          ? `${item.marca?.nombre ?? ''} ${item.modelo ?? ''}`.trim() || 'Moto'
+          : item.nombre ?? 'Accesorio';
+        const id = prod.tipo === 'Moto' ? item.id_moto_PK : item.id_accesorio_PK;
+        const stock = item.stock != null ? item.stock : '—';
+        const costo = item.precio_costo != null ? formatearMoneda(item.precio_costo) : '—';
+        productoSelect.add(new Option(`${prod.tipo}: ${nombre}`, `${prod.tipo}|${id}`));
+        return `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${prod.tipo}</td>
+            <td>${nombre}</td>
+            <td>${stock}</td>
+            <td>${costo}</td>
+          </tr>`;
+      }).join('');
+    }
+
+    function limpiarPedido() {
+      document.getElementById('pedido-proveedor').value = '';
+      document.getElementById('pedido-producto').innerHTML = '<option value="">— Selecciona un producto —</option>';
+      document.getElementById('pedido-cantidad').value = 1;
+      document.getElementById('pedido-observaciones').value = '';
+      document.getElementById('pedido-contacto').innerHTML = 'Selecciona un proveedor para ver datos.';
+      document.getElementById('tabla-productos-proveedor').innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px">Selecciona un proveedor.</td></tr>';
+    }
+
+    async function enviarPedido() {
+      const proveedorId = parseInt(document.getElementById('pedido-proveedor').value);
+      const productoKey = document.getElementById('pedido-producto').value;
+      const cantidad = parseInt(document.getElementById('pedido-cantidad').value) || 0;
+      const observaciones = document.getElementById('pedido-observaciones').value.trim();
+      if (!proveedorId) { mostrarAlerta('Selecciona un proveedor.', 'error'); return; }
+      if (!productoKey) { mostrarAlerta('Selecciona un producto.', 'error'); return; }
+      if (cantidad < 1) { mostrarAlerta('Ingresa una cantidad válida.', 'error'); return; }
+      const proveedor = proveedoresInventario.find(p => p.id_provedor_PK === proveedorId);
+      if (!proveedor) { mostrarAlerta('Proveedor inválido.', 'error'); return; }
+      const [tipo, id] = productoKey.split('|');
+      const productoId = parseInt(id);
+      const textoProducto = tipo === 'Moto'
+        ? catalogoMotos.find(m => m.id_moto_PK === productoId)
+        : catalogoAccesorios.find(a => a.id_accesorio_PK === productoId);
+      const nombreProducto = tipo === 'Moto'
+        ? `${textoProducto?.marca?.nombre ?? ''} ${textoProducto?.modelo ?? ''}`.trim() || 'Moto'
+        : textoProducto?.nombre ?? 'Accesorio';
+      const usuario = Sesion.obtener();
+      if (!usuario?.id_empleado) {
+        mostrarAlerta('No se encontró el empleado de sesión para registrar el pedido.', 'error');
+        return;
+      }
+
+      const mov = {
+        tipo_producto: tipo.toLowerCase(),
+        id_producto_ref: productoId,
+        empleado: { id_empleado_PK: usuario.id_empleado },
+        tipo_movimiento: 'entrada',
+        cantidad: cantidad,
+        motivo: `Pedido aprobado automáticamente. ${observaciones || 'Sin observaciones.'}`
+      };
+
+      try {
+        await Api.post('/inventario/movimiento/guardar', mov);
+        mostrarAlerta('Pedido aprobado y stock actualizado automáticamente.', 'exito');
+        await cargarMotos();
+        await cargarAccesorios();
+        await cargarMovimientos();
+        limpiarPedido();
+      } catch (e) {
+        mostrarAlerta(e.message || 'Error al registrar el pedido.', 'error');
+      }
+    }
+
+    // ── Guardados ─────────────────────────────────────────
+    async function guardarMoto() {
+      const id = document.getElementById('mo-id').value;
+      const moto = {
+        marca:       { id_marca_PK: parseInt(document.getElementById('mo-marca').value) },
+        categoria:   { id_categoria_PK: parseInt(document.getElementById('mo-cat').value) },
+        modelo:      document.getElementById('mo-modelo').value,
+        anio:        parseInt(document.getElementById('mo-anio').value),
+        cilindraje:  parseInt(document.getElementById('mo-cc').value) || 0,
+        color:       document.getElementById('mo-color').value,
+        precio_costo:parseFloat(document.getElementById('mo-costo').value) || 0,
+        precio_venta:parseFloat(document.getElementById('mo-precio').value) || 0,
+        stock:       parseInt(document.getElementById('mo-stock').value) || 0,
+        num_serie:   document.getElementById('mo-serie').value,
+        descripcion: document.getElementById('mo-desc').value,
+        activo:      document.getElementById('mo-activo').value === 'true'
+      };
+      try {
+        let msg;
+        if (id) {
+          moto.id_moto_PK = parseInt(id);
+          msg = await Api.put('/inventario/moto/actualizar', moto);
+        } else {
+          msg = await Api.post('/inventario/moto/guardar', moto);
+        }
+        mostrarAlerta(msg, 'exito');
+        cerrarModal('modal-moto');
+        await cargarMotos();
+        await cargarProductosMovimiento();
+        NotificacionesInventario.cargar(false);
+      } catch(e) { mostrarAlerta(e.message || 'Error al guardar moto.', 'error'); }
+    }
+
+    async function guardarAccesorio() {
+      const id = document.getElementById('ac-id').value;
+      const acc = {
+        nombre:       document.getElementById('ac-nombre').value,
+        categoria:    document.getElementById('ac-cat').value,
+        precio_costo: parseFloat(document.getElementById('ac-costo').value) || 0,
+        precio_venta: parseFloat(document.getElementById('ac-precio').value) || 0,
+        stock:        parseInt(document.getElementById('ac-stock').value) || 0,
+        descripcion:  document.getElementById('ac-desc').value,
+        activo:       document.getElementById('ac-activo').value === 'true'
+      };
+      try {
+        let msg;
+        if (id) {
+          acc.id_accesorio_PK = parseInt(id);
+          msg = await Api.put('/inventario/accesorio/actualizar', acc);
+        } else {
+          msg = await Api.post('/inventario/accesorio/guardar', acc);
+        }
+        mostrarAlerta(msg, 'exito');
+        cerrarModal('modal-accesorio');
+        await cargarAccesorios();
+        await cargarProductosMovimiento();
+        NotificacionesInventario.cargar(false);
+      } catch(e) { mostrarAlerta(e.message || 'Error al guardar accesorio.', 'error'); }
+    }
+
+    async function guardarMarca() {
+      const id = document.getElementById('mk-id').value;
+      const m = {
+        nombre: document.getElementById('mk-nombre').value,
+        pais_origen: document.getElementById('mk-pais').value,
+        descripcion: document.getElementById('mk-desc').value
+      };
+      try {
+        let msg;
+        if (id) {
+          m.id_marca_PK = parseInt(id);
+          msg = await Api.put('/inventario/marca/actualizar', m);
+        } else {
+          msg = await Api.post('/inventario/marca/guardar', m);
+        }
+        mostrarAlerta(msg, 'exito');
+        cerrarModal('modal-marca');
+        cargarMarcas();
+      } catch(e) { mostrarAlerta(e.message || 'Error al guardar marca.', 'error'); }
+    }
+
+    async function guardarCategoria() {
+      const id = document.getElementById('ct-id').value;
+      const c = {
+        nombre: document.getElementById('ct-nombre').value,
+        descripcion: document.getElementById('ct-desc').value
+      };
+      try {
+        let msg;
+        if (id) {
+          c.id_categoria_PK = parseInt(id);
+          msg = await Api.put('/inventario/categoria/actualizar', c);
+        } else {
+          msg = await Api.post('/inventario/categoria/guardar', c);
+        }
+        mostrarAlerta(msg, 'exito');
+        cerrarModal('modal-cat');
+        cargarCategorias();
+      } catch(e) { mostrarAlerta(e.message || 'Error al guardar categoría.', 'error'); }
+    }
+
+    async function guardarMovimiento() {
+      const idProd = parseInt(document.getElementById('mv-producto').value);
+      if (!idProd) { mostrarAlerta('Selecciona un producto.', 'error'); return; }
+      const mov = {
+        tipo_producto:   document.getElementById('mv-tipo').value,
+        id_producto_ref: idProd,
+        empleado:        { id_empleado_PK: parseInt(document.getElementById('mv-emp').value) },
+        tipo_movimiento: document.getElementById('mv-tmov').value,
+        cantidad:        parseInt(document.getElementById('mv-cant').value) || 1,
+        motivo:          document.getElementById('mv-motivo').value
+      };
+      try {
+        mov.tipo_producto = String(mov.tipo_producto || '').trim().toLowerCase();
+        mov.tipo_movimiento = String(mov.tipo_movimiento || '').trim().toLowerCase();
+        console.log('📦 Guardando movimiento:', mov);
+        const msg = await Api.post('/inventario/movimiento/guardar', mov);
+        console.log('✅ Movimiento guardado:', msg);
+        mostrarAlerta(msg, 'exito');
+        cerrarModal('modal-mov');
+        await cargarMovimientos();
+        await cargarMotos();
+        await cargarAccesorios();
+        await cargarProductosMovimiento();
+        NotificacionesInventario.cargar(false);
+      } catch(e) {
+        console.error('❌ Error guardando movimiento:', e);
+        mostrarAlerta(e.message || 'Error al guardar movimiento.', 'error');
+      }
+    }
+
+    // ── Eliminaciones ─────────────────────────────────────
+    async function eliminarMoto(id) {
+      if (!confirm(`¿Eliminar moto ID ${id}?`)) return;
+      try { const msg = await Api.delete(`/inventario/moto/eliminar/${id}`); mostrarAlerta(msg, 'exito'); cargarMotos(); }
+      catch(e) { mostrarAlerta('Error al eliminar.', 'error'); }
+    }
+
+    async function eliminarAccesorio(id) {
+      if (!confirm(`¿Eliminar accesorio ID ${id}?`)) return;
+      try { const msg = await Api.delete(`/inventario/accesorio/eliminar/${id}`); mostrarAlerta(msg, 'exito'); cargarAccesorios(); }
+      catch(e) { mostrarAlerta('Error al eliminar.', 'error'); }
+    }
+
+    async function eliminarMarca(id) {
+      if (!confirm(`¿Eliminar marca ID ${id}?`)) return;
+      try { const msg = await Api.delete(`/inventario/marca/eliminar/${id}`); mostrarAlerta(msg, 'exito'); cargarMarcas(); }
+      catch(e) { mostrarAlerta('Error al eliminar.', 'error'); }
+    }
+
+    async function eliminarCategoria(id) {
+      if (!confirm(`¿Eliminar categoría ID ${id}?`)) return;
+      try { const msg = await Api.delete(`/inventario/categoria/eliminar/${id}`); mostrarAlerta(msg, 'exito'); cargarCategorias(); }
+      catch(e) { mostrarAlerta('Error al eliminar.', 'error'); }
+    }
+
+    // ── Init ──────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      await cargarProveedoresParaPedidos();
+      await cargarMotos();
+      await cargarMarcas();
+      await cargarCategorias();
+      await cargarAccesorios();
+      await cargarMovimientos();
+      await cargarEmpleadosSelect();
+      await cargarProductosMovimiento();
+    });
+  </script>
+</body>
+</html>

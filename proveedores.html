@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERP Motos — Proveedores</title>
+  <link rel="stylesheet" href="CSS/style.css">
+  <style>
+    :root { --modulo-color: var(--proveedor-color); }
+    .panel-header h2 { color: var(--proveedor-color); }
+    .topbar { border-bottom: 3px solid var(--proveedor-color); }
+    .tabs { display:flex; gap:6px; flex-wrap:wrap; }
+    .tab { padding:8px 18px; border-radius:var(--radio); border:2px solid #ddd; background:#fff; cursor:pointer; font-size:.88rem; font-weight:600; transition:all var(--transicion); }
+    .tab.activo { border-color:var(--proveedor-color); background:var(--proveedor-color); color:#fff; }
+    .tab:hover:not(.activo) { border-color:var(--proveedor-color); color:var(--proveedor-color); }
+    .seccion { display:none; }
+    .seccion.activa { display:block; }
+    .empleado-avatar {
+      width:40px; height:40px; border-radius:50%;
+      background:var(--proveedor-color); color:#fff;
+      display:inline-flex; align-items:center; justify-content:center;
+      font-weight:700; font-size:1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span style="font-size:1.6rem">🏍️</span>
+      <div><span>ERP MotoShop</span><small>Módulo: Proveedor</small></div>
+    </div>
+    <nav><ul>
+      <li><a href="dashboard.html"><span class="icon">🏠</span><span>Dashboard</span></a></li>
+      <li class="sidebar-section">Módulos</li>
+      <li><a href="ventas.html"><span class="icon">💰</span><span>Ventas</span></a></li>
+      <li><a href="clientes.html"><span class="icon">👥</span><span>Clientes</span></a></li>
+      <li><a href="finanzas.html"><span class="icon">📊</span><span>Finanzas</span></a></li>
+      <li><a href="inventario.html"><span class="icon">📦</span><span>Inventario</span></a></li>
+      <li><a href="empleados.html"><span class="icon">👔</span><span>Empleados</span></a></li>
+      <li><a href="proveedores.html" class="activo"><span class="icon">🤵</span><span>Proveedores</span></a></li>
+    </ul></nav>
+    <div class="sidebar-footer">ERP Motos v1.0 · UPFIM</div>
+  </aside>
+    <header class="topbar">
+    <span class="topbar-titulo">🤵 Módulo de Proveedores</span>
+    <div class="topbar-usuario">
+      <div class="avatar" id="topbar-avatar">A</div>
+      <span id="topbar-nombre">Administrador</span>
+      <small id="topbar-rol" style="font-size:.75rem;opacity:.7;margin-left:6px"></small>
+      <button class="btn btn-peligro btn-sm" onclick="Sesion.cerrar()">⏻ Salir</button>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div id="alerta-container"></div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h2>🤵 Gestión de Proveedores</h2>
+        <div class="tabs">
+          <button class="tab activo" onclick="cambiarTab('lista')">📋 Lista</button>
+          <button class="tab" onclick="abrirNuevoProveedor()">➕ Nuevo proveedor</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="sec-lista" class="seccion activa">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>📋 Proveedores Registrados</h2>
+          <div class="buscador">
+            <span>🔍</span>
+            <input type="text" id="buscar-cli" placeholder="Buscar provedor..." oninput="filtrarTabla('buscar-cli','tabla-provedor')">
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="tabla-contenedor">
+            <table class="tabla">
+              <thead>
+                <tr><th>#</th><th>Nombre</th><th>Apellido Paterno</th><th>Apellido Materno</th><th>Email</th><th>Teléfono</th><th>RFC</th><th>moto FK</th><th>Accesorio FK</th></tr>
+              </thead>
+              <tbody id="tabla-provedor">
+                <tr><td colspan="9" style="text-align:center;padding:24px">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <div class="modal-overlay" id="modal-nuevo-provedor">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>➕ Nuevo Proveedor</h3>
+        <button class="modal-close" onclick="cerrarModal('modal-nuevo-provedor')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nombre</label>
+            <input type="text" id="pv-nombre" placeholder="Nombre de proveedor">
+          </div>
+          <div class="form-group">
+            <label>Apellido paterno</label>
+            <input type="text" id="pv-apellidop" placeholder="apellidop provedor">
+          </div>
+          <div class="form-group">
+            <label>Apellido materno</label>
+            <input type="text" id="pv-apellidom" placeholder="apellidom proveedor">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="pv-email" placeholder="correo@dominio.com">
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input type="tel" id="pv-telefono" placeholder="7711234567">
+          </div>
+          <div class="form-group">
+            <label>RFC</label>
+            <input type="text" id="pv-rfc" placeholder="GARL900101XXX">
+          </div>
+          <div class="form-group">
+            <label>Moto (FK)</label>
+            <select id="pv-moto"><option value="">— Selecciona una moto —</option></select>
+          </div>
+          <div class="form-group">
+            <label>Accesorio (FK)</label>
+            <select id="pv-accesorio"><option value="">— Selecciona un accesorio —</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gris" onclick="cerrarModal('modal-nuevo-provedor')">Cancelar</button>
+        <button class="btn btn-exito" onclick="guardarProveedor()">💾 Guardar proveedor</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="JS/app.js"></script>
+  <script>
+    Sesion.requerida();
+    Permisos.requerirModulo('proveedores');
+
+    async function cargarProveedores() {
+      try {
+        const proveedores = await Api.get('/inventario/provedor/obtener');
+        const tbody = document.getElementById('tabla-provedor');
+        if (!proveedores?.length) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px">Sin proveedores registrados.</td></tr>';
+          return;
+        }
+        // CORREGIDO AQUÍ: Ahora se lee exactamente la estructura mapeada en tu BD
+        tbody.innerHTML = proveedores.map((p, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${p.nombre ?? ''}</td>
+            <td>${p.apellido_paterno ?? ''}</td>
+            <td>${p.apellido_materno ?? ''}</td>
+            <td>${p.email ?? ''}</td>
+            <td>${p.telefono ?? ''}</td>
+            <td>${p.rfc ?? ''}</td>
+            <td>${p.moto?.id_moto_PK ?? ''}</td>
+            <td>${p.accesorio?.id_accesorio_PK ?? ''}</td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        console.error(error);
+        mostrarAlerta('No se pudieron cargar los proveedores.', 'error');
+      }
+    }
+
+    async function cargarMotosYAccesorios() {
+      try {
+        const [motos, accesorios] = await Promise.all([
+          Api.get('/inventario/moto/obtener'),
+          Api.get('/inventario/accesorio/obtener')
+        ]);
+
+        const selMoto = document.getElementById('pv-moto');
+        const selAccesorio = document.getElementById('pv-accesorio');
+        selMoto.innerHTML = '<option value="">— Selecciona una moto —</option>';
+        selAccesorio.innerHTML = '<option value="">— Selecciona un accesorio —</option>';
+
+        motos.forEach(m => {
+          const texto = `${m.marca?.nombre ?? ''} ${m.modelo ?? ''}`.trim() || `Moto ${m.id_moto_PK}`;
+          selMoto.add(new Option(texto, m.id_moto_PK));
+        });
+
+        accesorios.forEach(a => {
+          selAccesorio.add(new Option(a.nombre ?? `Accesorio ${a.id_accesorio_PK}`, a.id_accesorio_PK));
+        });
+      } catch (error) {
+        console.error(error);
+        mostrarAlerta('No se pudieron cargar motos o accesorios.', 'error');
+      }
+    }
+
+    function abrirNuevoProveedor() {
+      document.getElementById('pv-nombre').value = '';
+      document.getElementById('pv-apellidop').value = '';
+      document.getElementById('pv-apellidom').value = '';
+      document.getElementById('pv-email').value = '';
+      document.getElementById('pv-telefono').value = '';
+      document.getElementById('pv-rfc').value = '';
+      document.getElementById('pv-moto').innerHTML = '<option value="">Cargando…</option>';
+      document.getElementById('pv-accesorio').innerHTML = '<option value="">Cargando…</option>';
+      abrirModal('modal-nuevo-provedor');
+      cargarMotosYAccesorios();
+    }
+
+    async function guardarProveedor() {
+      const nombre = document.getElementById('pv-nombre').value.trim();
+      const apellidop = document.getElementById('pv-apellidop').value.trim();
+      const apellidom = document.getElementById('pv-apellidom').value.trim();
+      const email = document.getElementById('pv-email').value.trim();
+      const telefono = document.getElementById('pv-telefono').value.trim();
+      const rfc = document.getElementById('pv-rfc').value.trim();
+      const motoId = document.getElementById('pv-moto').value;
+      const accesorioId = document.getElementById('pv-accesorio').value;
+
+      if (!nombre || !apellidop || !email || !telefono || !rfc) {
+        mostrarAlerta('Completa nombre, apellido paterno, email, teléfono y RFC.', 'error');
+        return;
+      }
+
+      const nuevo = {
+        nombre,
+        apellido_paterno: apellidop, 
+        apellido_materno: apellidom, 
+        email,
+        telefono,
+        rfc,
+        moto: motoId ? { id_moto_PK: parseInt(motoId, 10) } : null,
+        accesorio: accesorioId ? { id_accesorio_PK: parseInt(accesorioId, 10) } : null
+      };
+
+      try {
+        await Api.post('/inventario/provedor/guardar', nuevo);
+        cerrarModal('modal-nuevo-provedor');
+        mostrarAlerta('Proveedor registrado correctamente.', 'exito');
+        cargarProveedores();
+      } catch (err) {
+        console.error(err);
+        mostrarAlerta('Error al guardar el proveedor.', 'error');
+      }
+    }
+
+    function cambiarTab(nombre) {
+      document.querySelectorAll('.seccion').forEach(s => s.classList.remove('activa'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('activo'));
+      const target = document.getElementById(`sec-${nombre}`);
+      if (target) target.classList.add('activa');
+      if (event?.target) event.target.classList.add('activo');
+    }
+
+    document.addEventListener('DOMContentLoaded', cargarProveedores);
+  </script>
+</body>
+</html>

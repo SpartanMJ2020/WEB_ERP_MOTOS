@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERP Motos — Ventas</title>
+  <link rel="stylesheet" href="CSS/style.css">
+  <style>
+    :root { --modulo-color: var(--ventas-color); }
+    .panel-header h2 { color: var(--ventas-color); }
+    .topbar { border-bottom: 3px solid var(--ventas-color); }
+
+    .tabs { display:flex; gap:6px; flex-wrap:wrap; }
+    .tab  {
+      padding: 8px 18px; border-radius: var(--radio);
+      border: 2px solid #ddd; background:#fff;
+      cursor:pointer; font-size:.88rem; font-weight:600;
+      transition: all var(--transicion);
+    }
+    .tab.activo { border-color: var(--ventas-color); background: var(--ventas-color); color:#fff; }
+    .tab:hover:not(.activo) { border-color: var(--ventas-color); color: var(--ventas-color); }
+    .seccion { display:none; }
+    .seccion.activa { display:block; }
+    .carrito-vacio { text-align:center; padding:16px; color:#888; }
+    .producto-row { display:flex; gap:8px; align-items:end; flex-wrap:wrap; margin-bottom:12px; }
+    .producto-row .form-group { flex:1; min-width:140px; margin:0; }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span style="font-size:1.6rem">🏍️</span>
+      <div><span>ERP MotoShop</span><small>Módulo: Ventas</small></div>
+    </div>
+    <nav><ul>
+      <li><a href="dashboard.html"><span class="icon">🏠</span><span>Dashboard</span></a></li>
+      <li class="sidebar-section">Módulos</li>
+      <li><a href="ventas.html" class="activo"><span class="icon">💰</span><span>Ventas</span></a></li>
+      <li><a href="clientes.html"><span class="icon">👥</span><span>Clientes</span></a></li>
+      <li><a href="finanzas.html"><span class="icon">📊</span><span>Finanzas</span></a></li>
+      <li><a href="inventario.html"><span class="icon">📦</span><span>Inventario</span></a></li>
+      <li><a href="empleados.html"><span class="icon">👔</span><span>Empleados</span></a></li>
+      <li><a href="proveedores.html"><span class="icon">🤵</span><span>Proveedores</span></a></li>
+    </ul></nav>
+    <div class="sidebar-footer">ERP Motos v1.0 · UPFIM</div>
+  </aside>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <span class="topbar-titulo">💰 Módulo de Ventas</span>
+    <div class="topbar-usuario">
+      <div class="avatar" id="topbar-avatar">A</div>
+      <span id="topbar-nombre">Administrador</span>
+      <small id="topbar-rol" style="font-size:.75rem;opacity:.7;margin-left:6px"></small>
+      <button class="btn btn-peligro btn-sm" onclick="Sesion.cerrar()">⏻ Salir</button>
+    </div>
+  </header>
+
+  <!-- CONTENIDO -->
+  <main class="main-content">
+    <div id="alerta-container"></div>
+
+    <!-- Tabs de navegación -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>💰 Gestión de Ventas</h2>
+        <div class="tabs">
+          <button class="tab activo" onclick="cambiarTab('ventas')">📋 Ventas</button>
+          <button class="tab" onclick="cambiarTab('nueva')">➕ Nueva Venta</button>
+          <button class="tab" onclick="cambiarTab('cotizaciones')">📄 Cotizaciones</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Sección: Lista de Ventas ── -->
+    <div id="sec-ventas" class="seccion activa">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>📋 Registro de Ventas</h2>
+          <div class="buscador">
+            <span>🔍</span>
+            <input type="text" id="buscar-venta" placeholder="Buscar venta..." oninput="filtrarTabla('buscar-venta','tabla-ventas')">
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="tabla-contenedor">
+            <table class="tabla">
+              <thead>
+                <tr>
+                  <th>#</th><th>Folio</th><th>Cliente</th><th>Empleado</th>
+                  <th>Total</th><th>Método Pago</th><th>Estado</th><th>Fecha</th><th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-ventas">
+                <tr><td colspan="9" style="text-align:center;padding:24px">Cargando ventas...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Sección: Nueva Venta ── -->
+    <div id="sec-nueva" class="seccion">
+      <div class="panel">
+        <div class="panel-header"><h2>➕ Registrar Nueva Venta</h2></div>
+        <div class="panel-body">
+          <form onsubmit="guardarVenta(event)">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Folio</label>
+                <input type="text" id="v-folio" readonly placeholder="Generando..." style="background:#f5f5f5;cursor:not-allowed;font-weight:600">
+              </div>
+              <div class="form-group">
+                <label>Cliente</label>
+                <select id="v-cliente" required>
+                  <option value="">— Selecciona cliente —</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Empleado</label>
+                <select id="v-empleado" required>
+                  <option value="">— Selecciona empleado —</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Método de Pago</label>
+                <select id="v-metodo" required>
+                  <option value="contado">Contado</option>
+                  <option value="transferencia">Transferencia</option>
+                  <option value="tarjeta">Tarjeta</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Productos de la venta -->
+            <div style="margin-top:20px">
+              <h3 style="margin-bottom:12px;color:var(--ventas-color)">📦 Productos</h3>
+              <div class="producto-row">
+                <div class="form-group">
+                  <label>Tipo</label>
+                  <select id="p-tipo" onchange="cargarProductosSelect()">
+                    <option value="moto">Moto</option>
+                    <option value="accesorio">Accesorio</option>
+                  </select>
+                </div>
+                <div class="form-group" style="flex:2">
+                  <label>Producto</label>
+                  <select id="p-producto">
+                    <option value="">— Selecciona producto —</option>
+                  </select>
+                </div>
+                <div class="form-group" style="max-width:100px">
+                  <label>Cantidad</label>
+                  <input type="number" id="p-cantidad" min="1" value="1">
+                </div>
+                <div class="form-group" style="max-width:120px">
+                  <label>Desc. item (%)</label>
+                  <input type="number" id="p-descuento" min="0" step="0.01" value="0">
+                </div>
+                <button type="button" class="btn btn-primario" onclick="agregarProducto()">➕ Agregar</button>
+              </div>
+
+              <div class="tabla-contenedor">
+                <table class="tabla">
+                  <thead>
+                    <tr>
+                      <th>Tipo</th><th>Producto</th><th>Precio</th><th>Cant.</th>
+                      <th>Desc. (%)</th><th>Subtotal</th><th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="tabla-carrito">
+                    <tr><td colspan="7" class="carrito-vacio">Agrega productos del inventario</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="form-grid" style="margin-top:20px">
+              <div class="form-group">
+                <label>Subtotal ($)</label>
+                <input type="number" id="v-subtotal" min="0" step="0.01" readonly>
+              </div>
+              <div class="form-group">
+                <label>Descuento (%)</label>
+                <input type="number" id="v-descuento" min="0" step="0.01" value="0" oninput="calcularTotal()">
+              </div>
+              <div class="form-group">
+                <label>IVA ($)</label>
+                <input type="number" id="v-iva" min="0" step="0.01" readonly>
+              </div>
+              <div class="form-group">
+                <label>Total ($)</label>
+                <input type="number" id="v-total" min="0" step="0.01" readonly style="font-weight:700">
+              </div>
+              <div class="form-group full">
+                <label>Observaciones</label>
+                <textarea id="v-obs" placeholder="Notas adicionales..."></textarea>
+              </div>
+            </div>
+            <div style="margin-top:20px; display:flex; gap:10px">
+              <button type="submit" class="btn btn-exito">💾 Guardar venta</button>
+              <button type="button" class="btn btn-gris" onclick="limpiarFormularioVenta()">🔄 Limpiar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Sección: Cotizaciones ── -->
+    <div id="sec-cotizaciones" class="seccion">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>📄 Cotizaciones</h2>
+          <button class="btn btn-primario btn-sm" onclick="abrirModalCotizacion()">➕ Nueva cotización</button>
+        </div>
+        <div class="panel-body">
+          <div class="tabla-contenedor">
+            <table class="tabla">
+              <thead>
+                <tr><th>#</th><th>Folio</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Vigencia</th><th>Fecha</th><th>Acciones</th></tr>
+              </thead>
+              <tbody id="tabla-cotizaciones">
+                <tr><td colspan="8" style="text-align:center;padding:24px">Cargando cotizaciones...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Modal nueva cotización -->
+  <div class="modal-overlay" id="modal-cotizacion">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>📄 Nueva Cotización</h3>
+        <button class="modal-close" onclick="cerrarModal('modal-cotizacion')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Folio Cotización</label>
+            <input type="text" id="c-folio" placeholder="COT-2026-001">
+          </div>
+          <div class="form-group">
+            <label>Cliente</label>
+            <select id="c-cliente"><option value="">— Selecciona —</option></select>
+          </div>
+          <div class="form-group">
+            <label>Empleado</label>
+            <select id="c-empleado"><option value="">— Selecciona —</option></select>
+          </div>
+          <div class="form-group">
+            <label>Total ($)</label>
+            <input type="number" id="c-total" min="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <label>Vigencia (días)</label>
+            <input type="number" id="c-vigencia" value="15" min="1">
+          </div>
+          <div class="form-group full">
+            <label>Notas</label>
+            <textarea id="c-notas" placeholder="Observaciones de la cotización..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gris" onclick="cerrarModal('modal-cotizacion')">Cancelar</button>
+        <button class="btn btn-exito" onclick="guardarCotizacion()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal detalle de venta -->
+  <div class="modal-overlay" id="modal-detalle-venta">
+    <div class="modal" style="max-width:700px">
+      <div class="modal-header">
+        <h3>📋 Detalle de Venta</h3>
+        <button class="modal-close" onclick="cerrarModal('modal-detalle-venta')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="tabla-contenedor">
+          <table class="tabla">
+            <thead>
+              <tr><th>Tipo</th><th>ID</th><th>Cant.</th><th>P. Unit.</th><th>Desc.</th><th>Subtotal</th></tr>
+            </thead>
+            <tbody id="tabla-detalle-venta">
+              <tr><td colspan="6" style="text-align:center;padding:16px">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gris" onclick="cerrarModal('modal-detalle-venta')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="JS/app.js"></script>
+  <script>
+    Sesion.requerida();
+    Permisos.requerirModulo('ventas');
+
+    let catalogoMotos = [];
+    let catalogoAccesorios = [];
+    let carrito = [];
+
+    // ── Tabs ──────────────────────────────────────────────
+    function cambiarTab(nombre) {
+      document.querySelectorAll('.seccion').forEach(s => s.classList.remove('activa'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('activo'));
+      document.getElementById(`sec-${nombre}`).classList.add('activa');
+      event.target.classList.add('activo');
+      if (nombre === 'nueva') cargarSiguienteFolio();
+    }
+
+    // ── Normalizar descuento como porcentaje ──────────────
+    function normalizarDescuentoPorcentaje(valor, base) {
+      if (isNaN(valor) || valor <= 0) return 0;
+      if (valor <= 100) return valor;
+      if (base <= 0) return 0;
+      return Math.min((valor / base) * 100, 100);
+    }
+
+    // ── Calcular total en tiempo real ─────────────────────
+    function calcularTotal() {
+      const sub  = carrito.reduce((s, i) => s + i.subtotal, 0);
+      const rawDesc = parseFloat(document.getElementById('v-descuento').value) || 0;
+      const descPercent = normalizarDescuentoPorcentaje(rawDesc, sub);
+      if (rawDesc > 100 && sub > 0) {
+        document.getElementById('v-descuento').value = descPercent.toFixed(2);
+      }
+      const descAmount = sub * (descPercent / 100);
+      const base = sub - descAmount;
+      const iva  = base * 0.16;
+      const total= base + iva;
+      document.getElementById('v-subtotal').value = sub.toFixed(2);
+      document.getElementById('v-iva').value   = iva.toFixed(2);
+      document.getElementById('v-total').value = total.toFixed(2);
+    }
+
+    // ── Catálogo de productos ───────────────────────────
+    async function cargarCatalogo() {
+      try {
+        [catalogoMotos, catalogoAccesorios] = await Promise.all([
+          Api.get('/inventario/moto/obtener'),
+          Api.get('/inventario/accesorio/obtener')
+        ]);
+        cargarProductosSelect();
+      } catch (e) { console.warn('No se pudo cargar el catálogo:', e); }
+    }
+
+    function nombreMoto(m) {
+      const marca = m.marca ? m.marca.nombre : '';
+      return `${marca} ${m.modelo} ${m.anio} — $${m.precio_venta} (stock: ${m.stock})`;
+    }
+
+    function cargarProductosSelect() {
+      const tipo = document.getElementById('p-tipo').value;
+      const sel  = document.getElementById('p-producto');
+      sel.innerHTML = '<option value="">— Selecciona producto —</option>';
+      const lista = tipo === 'moto' ? catalogoMotos : catalogoAccesorios;
+      lista.filter(p => p.activo && p.stock > 0).forEach(p => {
+        const id   = tipo === 'moto' ? p.id_moto_PK : p.id_accesorio_PK;
+        const txt  = tipo === 'moto' ? nombreMoto(p) : `${p.nombre} — $${p.precio_venta} (stock: ${p.stock})`;
+        sel.add(new Option(txt, id));
+      });
+    }
+
+    function obtenerProducto(tipo, id) {
+      if (tipo === 'moto') return catalogoMotos.find(m => m.id_moto_PK === id);
+      return catalogoAccesorios.find(a => a.id_accesorio_PK === id);
+    }
+
+    function nombreProducto(tipo, prod) {
+      if (tipo === 'moto') return prod.marca ? `${prod.marca.nombre} ${prod.modelo}` : prod.modelo;
+      return prod.nombre;
+    }
+
+    function agregarProducto() {
+      const tipo      = document.getElementById('p-tipo').value;
+      const id        = parseInt(document.getElementById('p-producto').value);
+      const cantidad  = parseInt(document.getElementById('p-cantidad').value) || 1;
+      const rawDescuento = parseFloat(document.getElementById('p-descuento').value) || 0;
+
+      if (!id) { mostrarAlerta('Selecciona un producto.', 'error'); return; }
+
+      const prod = obtenerProducto(tipo, id);
+      if (!prod) { mostrarAlerta('Producto no encontrado.', 'error'); return; }
+      if (cantidad > prod.stock) {
+        mostrarAlerta(`Stock insuficiente. Disponible: ${prod.stock}`, 'error');
+        return;
+      }
+
+      const existente = carrito.find(i => i.tipo_producto === tipo && i.id_producto_ref === id);
+      const nuevaCant = existente ? existente.cantidad + cantidad : cantidad;
+      if (nuevaCant > prod.stock) {
+        mostrarAlerta(`Stock insuficiente. Disponible: ${prod.stock}`, 'error');
+        return;
+      }
+
+      const precio   = prod.precio_venta;
+      const baseItem = nuevaCant * precio;
+      let descuentoPercent = rawDescuento;
+      if (rawDescuento > 100 && baseItem > 0) {
+        descuentoPercent = normalizarDescuentoPorcentaje(rawDescuento, baseItem);
+        document.getElementById('p-descuento').value = descuentoPercent.toFixed(2);
+      }
+      const descuentoMonto = baseItem * (descuentoPercent / 100);
+      const subtotal = baseItem - descuentoMonto;
+
+      if (existente) {
+        existente.cantidad = nuevaCant;
+        existente.descuento_item = descuentoPercent;
+        existente.subtotal = subtotal;
+      } else {
+        carrito.push({
+          tipo_producto: tipo,
+          id_producto_ref: id,
+          nombre: nombreProducto(tipo, prod),
+          precio_unitario: precio,
+          cantidad: nuevaCant,
+          descuento_item: descuentoPercent,
+          subtotal
+        });
+      }
+
+      renderizarCarrito();
+      limpiarCamposProducto();
+    }
+
+    function limpiarCamposProducto() {
+      document.getElementById('p-producto').value = '';
+      document.getElementById('p-cantidad').value = 1;
+      document.getElementById('p-descuento').value = 0;
+    }
+
+    function quitarProducto(idx) {
+      carrito.splice(idx, 1);
+      renderizarCarrito();
+    }
+
+    function renderizarCarrito() {
+      const tbody = document.getElementById('tabla-carrito');
+      if (!carrito.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="carrito-vacio">Agrega productos del inventario</td></tr>';
+        calcularTotal();
+        return;
+      }
+      tbody.innerHTML = carrito.map((item, i) => {
+        const baseItem = item.precio_unitario * item.cantidad;
+        const descuentoVisible = normalizarDescuentoPorcentaje(item.descuento_item, baseItem);
+        return `
+        <tr>
+          <td>${item.tipo_producto === 'moto' ? '🏍️ Moto' : '🪖 Acc.'}</td>
+          <td>${item.nombre}</td>
+          <td>${formatearMoneda(item.precio_unitario)}</td>
+          <td>${item.cantidad}</td>
+          <td>${descuentoVisible.toFixed(2)}%</td>
+          <td>${formatearMoneda(item.subtotal)}</td>
+          <td><button type="button" class="badge badge-gris btn-accion" onclick="quitarProducto(${i})">Quitar</button></td>
+        </tr>`;
+      }).join('');
+      calcularTotal();
+    }
+
+    function limpiarFormularioVenta() {
+      carrito = [];
+      renderizarCarrito();
+      document.getElementById('v-cliente').value = '';
+      document.getElementById('v-empleado').value = '';
+      document.getElementById('v-metodo').value = 'contado';
+      document.getElementById('v-descuento').value = 0;
+      document.getElementById('v-obs').value = '';
+      cargarSiguienteFolio();
+      const usuario = Sesion.obtener();
+      if (usuario?.id_empleado) {
+        const selEmp = document.getElementById('v-empleado');
+        if (selEmp) selEmp.value = usuario.id_empleado;
+      }
+    }
+
+    async function cargarSiguienteFolio() {
+      const input = document.getElementById('v-folio');
+      if (!input) return;
+      // Generar folio localmente desde el frontend sin consultar la API
+      input.value = FolioLocal.generarVenta();
+    }
+
+    // ── Cargar selects ────────────────────────────────────
+    async function cargarSelects() {
+      try {
+        const [clientes, empleados] = await Promise.all([
+          Api.get('/clientes/cliente/obtener'),
+          Api.get('/empleados/empleado/obtener')
+        ]);
+
+        ['v-cliente','c-cliente'].forEach(id => {
+          const sel = document.getElementById(id);
+          clientes.forEach(c => {
+            const opt = new Option(`${c.nombre} ${c.apellido_paterno}`, c.id_cliente_PK);
+            sel.add(opt);
+          });
+        });
+
+        ['v-empleado','c-empleado'].forEach(id => {
+          const sel = document.getElementById(id);
+          empleados.forEach(e => {
+            const opt = new Option(`${e.nombre} ${e.apellido_paterno}`, e.id_empleado_PK);
+            sel.add(opt);
+          });
+        });
+
+        const usuario = Sesion.obtener();
+        if (usuario?.id_empleado) {
+          const selEmp = document.getElementById('v-empleado');
+          if (selEmp) selEmp.value = usuario.id_empleado;
+        }
+      } catch (e) { console.warn('No se pudieron cargar los selects:', e); }
+    }
+
+    function etiquetaEstadoVenta(estado) {
+      const mapa = {
+        pendiente:  { clase: 'badge-advertencia', texto: 'Pendiente de aprobación' },
+        completada: { clase: 'badge-exito',       texto: 'Aprobada' },
+        cancelada:  { clase: 'badge-peligro',     texto: 'Rechazada' }
+      };
+      return mapa[estado] || { clase: 'badge-gris', texto: estado };
+    }
+    async function cargarVentas() {
+      try {
+        const ventas = await Api.get('/ventas/venta/obtener');
+        const tbody  = document.getElementById('tabla-ventas');
+        if (!ventas.length) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px">Sin ventas registradas.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = ventas.map((v, i) => {
+          const est = etiquetaEstadoVenta(v.estado);
+          return `
+          <tr>
+            <td>${i + 1}</td>
+            <td><strong>${v.folio}</strong></td>
+            <td>${v.cliente ? v.cliente.nombre + ' ' + v.cliente.apellido_paterno : '—'}</td>
+            <td>${v.empleado ? v.empleado.nombre : '—'}</td>
+            <td>${formatearMoneda(v.total)}</td>
+            <td>${v.metodo_pago}</td>
+            <td><span class="badge ${est.clase}">${est.texto}</span></td>
+            <td>${formatearFecha(v.fecha_venta)}</td>
+            <td class="acciones-celda">
+              <button type="button" class="badge badge-info btn-accion" onclick="verDetalleVenta(${v.id_venta_PK})">Ver</button>
+              <button type="button" class="badge badge-peligro btn-accion" onclick="eliminarVenta(${v.id_venta_PK})">Eliminar</button>
+            </td>
+          </tr>`;
+        }).join('');
+      } catch (e) {
+        document.getElementById('tabla-ventas').innerHTML =
+          '<tr><td colspan="9" style="text-align:center;color:red;padding:16px">⚠️ No se pudo conectar con la API.</td></tr>';
+      }
+    }
+
+    // ── Cargar cotizaciones ───────────────────────────────
+    async function cargarCotizaciones() {
+      try {
+        const cots  = await Api.get('/ventas/cotizacion/obtener');
+        const tbody = document.getElementById('tabla-cotizaciones');
+        if (!cots.length) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px">Sin cotizaciones registradas.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = cots.map((c, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td><strong>${c.folio_cotizacion}</strong></td>
+            <td>${c.cliente ? c.cliente.nombre + ' ' + c.cliente.apellido_paterno : '—'}</td>
+            <td>${formatearMoneda(c.total)}</td>
+            <td><span class="badge ${c.estado === 'aceptada' ? 'badge-exito' : c.estado === 'vencida' ? 'badge-peligro' : 'badge-info'}">${c.estado}</span></td>
+            <td>${c.vigencia_dias} días</td>
+            <td>${formatearFecha(c.fecha_cotizacion)}</td>
+            <td class="acciones-celda"><button type="button" class="badge badge-peligro btn-accion" onclick="eliminarCotizacion(${c.id_cotizacion_PK})">Eliminar</button></td>
+          </tr>`).join('');
+      } catch(e) {
+        document.getElementById('tabla-cotizaciones').innerHTML =
+          '<tr><td colspan="8" style="text-align:center;color:red;padding:16px">⚠️ No se pudo conectar con la API.</td></tr>';
+      }
+    }
+
+    // ── CRUD Ventas ───────────────────────────────────────
+    async function guardarVenta(e) {
+      e.preventDefault();
+      if (!carrito.length) {
+        mostrarAlerta('Agrega al menos un producto a la venta.', 'error');
+        return;
+      }
+      const venta = {
+        folio:        document.getElementById('v-folio').value,
+        cliente:     { id_cliente_PK: parseInt(document.getElementById('v-cliente').value) },
+        empleado:    { id_empleado_PK: parseInt(document.getElementById('v-empleado').value) },
+        descuento:     parseFloat(document.getElementById('v-descuento').value) || 0,
+        metodo_pago:   document.getElementById('v-metodo').value,
+        estado:        'pendiente',
+        observaciones: document.getElementById('v-obs').value,
+        detalles: carrito.map(i => ({
+          tipo_producto:   i.tipo_producto,
+          id_producto_ref: i.id_producto_ref,
+          cantidad:        i.cantidad,
+          descuento_item:  i.descuento_item
+        }))
+      };
+      try {
+        const msg = await Api.post('/ventas/venta/registrar', venta);
+        mostrarAlerta(msg, 'exito');
+        limpiarFormularioVenta();
+        cargarVentas();
+      } catch(err) {
+        const texto = err.message || 'Error al guardar la venta.';
+        mostrarAlerta(texto, 'error');
+      }
+    }
+
+    async function verDetalleVenta(idVenta) {
+      abrirModal('modal-detalle-venta');
+      const tbody = document.getElementById('tabla-detalle-venta');
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:16px">Cargando...</td></tr>';
+      try {
+        const detalles = await Api.get(`/ventas/detalle/obtener/${idVenta}`);
+        if (!detalles.length) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:16px">Sin productos registrados.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = detalles.map(d => {
+          const prod = obtenerProducto(d.tipo_producto, d.id_producto_ref);
+          const nombre = prod ? nombreProducto(d.tipo_producto, prod) : `ID ${d.id_producto_ref}`;
+          const baseItem = d.precio_unitario * d.cantidad;
+          const descuentoVisible = normalizarDescuentoPorcentaje(d.descuento_item, baseItem);
+          const subtotalVisible = baseItem * (1 - descuentoVisible / 100);
+          return `<tr>
+            <td>${d.tipo_producto}</td>
+            <td>${nombre}</td>
+            <td>${d.cantidad}</td>
+            <td>${formatearMoneda(d.precio_unitario)}</td>
+            <td>${descuentoVisible.toFixed(2)}%</td>
+            <td>${formatearMoneda(subtotalVisible)}</td>
+          </tr>`;
+        }).join('');
+      } catch(e) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;padding:16px">Error al cargar detalle.</td></tr>';
+      }
+    }
+
+    async function eliminarVenta(id) {
+      if (!confirm(`¿Eliminar venta ID ${id}?`)) return;
+      try {
+        const msg = await Api.delete(`/ventas/venta/eliminar/${id}`);
+        mostrarAlerta(msg, 'exito');
+        cargarVentas();
+      } catch(e) { mostrarAlerta('Error al eliminar.', 'error'); }
+    }
+
+    // ── CRUD Cotizaciones ─────────────────────────────────
+    function abrirModalCotizacion() {
+      // Generar folio de cotización localmente
+      document.getElementById('c-folio').value = FolioLocal.generarCotizacion();
+      abrirModal('modal-cotizacion');
+    }
+
+    async function guardarCotizacion() {
+      const cot = {
+        folio_cotizacion: document.getElementById('c-folio').value,
+        cliente:        { id_cliente_PK: parseInt(document.getElementById('c-cliente').value) },
+        empleado:       { id_empleado_PK: parseInt(document.getElementById('c-empleado').value) },
+        total:            parseFloat(document.getElementById('c-total').value) || 0,
+        vigencia_dias:    parseInt(document.getElementById('c-vigencia').value) || 15,
+        notas:            document.getElementById('c-notas').value,
+        estado:           'vigente'
+      };
+      try {
+        const msg = await Api.post('/ventas/cotizacion/guardar', cot);
+        mostrarAlerta(msg, 'exito');
+        cerrarModal('modal-cotizacion');
+        cargarCotizaciones();
+      } catch(e) { mostrarAlerta('Error al guardar cotización.', 'error'); }
+    }
+
+    async function eliminarCotizacion(id) {
+      if (!confirm(`¿Eliminar cotización ID ${id}?`)) return;
+      try {
+        const msg = await Api.delete(`/ventas/cotizacion/eliminar/${id}`);
+        mostrarAlerta(msg, 'exito');
+        cargarCotizaciones();
+      } catch(e) { mostrarAlerta('Error al eliminar.', 'error'); }
+    }
+
+    // ── Inicializar ───────────────────────────────────────
+    cargarSelects();
+    cargarCatalogo();
+    cargarSiguienteFolio();
+    cargarVentas();
+    cargarCotizaciones();
+  </script>
+</body>
+</html>

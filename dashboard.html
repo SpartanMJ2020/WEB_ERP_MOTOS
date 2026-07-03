@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ERP Motos — Dashboard</title>
+  <link rel="stylesheet" href="CSS/style.css">
+  <style>
+    .stat-card:nth-child(1) { border-left-color: var(--ventas-color); }
+    .stat-card:nth-child(2) { border-left-color: var(--clientes-color); }
+    .stat-card:nth-child(3) { border-left-color: var(--finanzas-color); }
+    .stat-card:nth-child(4) { border-left-color: var(--inventario-color); }
+    .stat-card:nth-child(5) { border-left-color: var(--empleados-color); }
+    .stat-card:nth-child(6) { border-left-color: var(--proveedor-color); }
+    .stat-card:nth-child(7) { border-left-color: var(--proveedor-color); }
+
+    .mod-ventas     .modulo-icon { background: rgba(233,69,96,.1);  color: var(--ventas-color); }
+    .mod-clientes   .modulo-icon { background: rgba(15,52,96,.1);   color: var(--clientes-color); }
+    .mod-finanzas   .modulo-icon { background: rgba(39,174,96,.1);  color: var(--finanzas-color); }
+    .mod-inventario .modulo-icon { background: rgba(243,156,18,.1); color: var(--inventario-color); }
+    .mod-empleados  .modulo-icon { background: rgba(142,68,173,.1); color: var(--empleados-color); }
+    .mod-proveedores  .modulo-icon { background: rgba(4, 235, 224, 0.1); color: var(--proveedor-color); }
+
+
+    .bienvenida {
+      background: linear-gradient(135deg, var(--primario), var(--acento2));
+      color: #fff;
+      border-radius: var(--radio);
+      padding: 28px 32px;
+      margin-bottom: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .bienvenida h2 { font-size: 1.4rem; margin-bottom: 6px; }
+    .bienvenida p  { font-size: .88rem; opacity: .8; }
+    .bienvenida .emoji { font-size: 3.5rem; }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span style="font-size:1.6rem">🏍️</span>
+      <div>
+        <span>ERP MotoShop</span>
+        <small>Panel de control</small>
+      </div>
+    </div>
+    <nav>
+      <ul>
+        <li><a href="dashboard.html" class="activo"><span class="icon">🏠</span><span>Dashboard</span></a></li>
+        <li class="sidebar-section">Módulos</li>
+        <li><a href="ventas.html"><span class="icon">💰</span><span>Ventas</span></a></li>
+        <li><a href="clientes.html"><span class="icon">👥</span><span>Clientes</span></a></li>
+        <li><a href="finanzas.html"><span class="icon">📊</span><span>Finanzas</span></a></li>
+        <li><a href="inventario.html"><span class="icon">📦</span><span>Inventario</span></a></li>
+        <li><a href="empleados.html"><span class="icon">👔</span><span>Empleados</span></a></li>
+        <li><a href="proveedores.html"><span class="icon">🤵</span><span>Proveedores</span></a></li>
+      </ul>
+    </nav>
+    <div class="sidebar-footer">ERP Motos v1.0 · UPFIM</div>
+  </aside>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <span class="topbar-titulo">🏠 Dashboard General</span>
+    <div class="topbar-usuario">
+      <div class="avatar" id="topbar-avatar">A</div>
+      <span id="topbar-nombre">Administrador</span>
+      <small id="topbar-rol" style="font-size:.75rem;opacity:.7;margin-left:6px"></small>
+      <button class="btn btn-peligro btn-sm" onclick="Sesion.cerrar()">⏻ Salir</button>
+    </div>
+  </header>
+
+  <!-- CONTENIDO -->
+  <main class="main-content">
+
+    <div id="notif-stock-banner" style="display:none"></div>
+
+    <div class="bienvenida">
+      <div>
+        <h2>Bienvenido al ERP MotoShop 🏍️</h2>
+        <p>Sistema de gestión integral de ventas, clientes, finanzas, inventario, proveedores y empleados.</p>
+        <p id="fecha-hoy" style="margin-top:8px; opacity:.7; font-size:.82rem"></p>
+      </div>
+      <div class="emoji">🏍️</div>
+    </div>
+
+    <!-- Tarjetas de resumen -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-info"><p>Ventas totales</p><h3 id="stat-ventas">—</h3></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-info"><p>Clientes registrados</p><h3 id="stat-clientes">—</h3></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📦</div>
+        <div class="stat-info"><p>Motos en inventario</p><h3 id="stat-motos">—</h3></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">👔</div>
+        <div class="stat-info"><p>Empleados activos</p><h3 id="stat-empleados">—</h3></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-info"><p>Ingresos del mes</p><h3 id="stat-ingresos">—</h3></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🛍️</div>
+        <div class="stat-info"><p>Producto más vendido</p><h3 id="stat-mas-vendido">—</h3></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🤵</div>
+        <div class="stat-info"><p>Proveedores activos</p><h3 id="stat-proveedores">—</h3></div>
+      </div>
+    </div>
+
+    <!-- Alertas de stock bajo -->
+    <div class="panel" id="panel-stock-bajo" style="display:none">
+      <div class="panel-header">
+        <h2>⚠️ Alertas de inventario</h2>
+        <a href="inventario.html" class="btn btn-sm" style="border:2px solid var(--inventario-color);color:var(--inventario-color)">Ir a inventario</a>
+      </div>
+      <div class="panel-body" id="dashboard-stock-bajo"></div>
+    </div>
+
+    <!-- Accesos directos -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>📂 Módulos del sistema</h2>
+      </div>
+      <div class="panel-body">
+        <div class="modulos-grid">
+
+          <a href="ventas.html" class="modulo-card mod-ventas">
+            <div class="modulo-icon">💰</div>
+            <h3>Ventas</h3>
+            <p>Registrar y consultar ventas</p>
+          </a>
+
+          <a href="clientes.html" class="modulo-card mod-clientes">
+            <div class="modulo-icon">👥</div>
+            <h3>Clientes</h3>
+            <p>Gestión de clientes y direcciones</p>
+          </a>
+
+          <a href="finanzas.html" class="modulo-card mod-finanzas">
+            <div class="modulo-icon">📊</div>
+            <h3>Finanzas</h3>
+            <p>Ingresos y egresos</p>
+          </a>
+
+          <a href="inventario.html" class="modulo-card mod-inventario">
+            <div class="modulo-icon">📦</div>
+            <h3>Inventario</h3>
+            <p>Motos, accesorios y stock</p>
+          </a>
+
+          <a href="empleados.html" class="modulo-card mod-empleados">
+            <div class="modulo-icon">👔</div>
+            <h3>Empleados</h3>
+            <p>Personal y roles del sistema</p>
+          </a>
+
+          <a href="proveedores.html" class="modulo-card mod-proveedores">
+            <div class="modulo-icon">🤵</div>
+            <h3>Proveedores</h3>
+            <p>Proveedor y accesorio que maneja</p>
+          </a>
+
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="JS/app.js"></script>
+  <script>
+    Sesion.requerida();
+    Permisos.aplicarDashboard();
+
+    document.getElementById('fecha-hoy').textContent =
+      new Date().toLocaleDateString('es-MX', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+    async function cargarEstadisticas() {
+      try {
+        const tareas = [];
+
+        if (Permisos.puedeAcceder('ventas'))
+          tareas.push(Api.get('/ventas/venta/obtener').then(d => ({ ventas: d })));
+        if (Permisos.puedeAcceder('clientes'))
+          tareas.push(Api.get('/clientes/cliente/obtener').then(d => ({ clientes: d })));
+        if (Permisos.puedeAcceder('inventario'))
+          tareas.push(Api.get('/inventario/moto/obtener').then(d => ({ motos: d })));
+        if (Permisos.puedeAcceder('empleados'))
+          tareas.push(Api.get('/empleados/empleado/obtener').then(d => ({ empleados: d })));
+        if (Permisos.puedeAcceder('finanzas'))
+          tareas.push(Api.get('/finanzas/ingreso/obtener').then(d => ({ ingresos: d })));
+        if (Permisos.puedeAcceder('proveedores'))
+          tareas.push(Api.get('/inventario/provedor/obtener').then(d => ({ proveedores: d })));
+
+        const resultados = Object.assign({}, ...(await Promise.all(tareas)));
+
+        if (resultados.ventas)
+          document.getElementById('stat-ventas').textContent = resultados.ventas.length;
+        if (resultados.clientes)
+          document.getElementById('stat-clientes').textContent = resultados.clientes.length;
+        if (resultados.proveedores)
+          document.getElementById('stat-proveedores').textContent = resultados.proveedores.length;
+        if (resultados.motos)
+          document.getElementById('stat-motos').textContent = resultados.motos.length;
+        if (resultados.empleados)
+          document.getElementById('stat-empleados').textContent = resultados.empleados.filter(e => e.activo).length;
+        if (resultados.ingresos) {
+          const hoy = new Date();
+          const total = resultados.ingresos
+            .filter(i => {
+              const f = new Date(i.fecha_ingreso);
+              return f.getMonth() === hoy.getMonth() && f.getFullYear() === hoy.getFullYear();
+            })
+            .reduce((acc, i) => acc + i.monto, 0);
+          document.getElementById('stat-ingresos').textContent = formatearMoneda(total);
+        }
+
+        try {
+          const detalles = await Api.get('/ventas/detalle/obtener');
+          const totales = detalles.reduce((acc, item) => {
+            const key = `${item.tipo_producto}|${item.id_producto_ref}`;
+            acc[key] = (acc[key] || 0) + item.cantidad;
+            return acc;
+          }, {});
+
+          if (Object.keys(totales).length) {
+            const [mejorClave, cantidad] = Object.entries(totales)
+              .reduce((best, current) => current[1] > best[1] ? current : best, ['', 0]);
+            const [tipo, id] = mejorClave.split('|');
+            let nombre = `${tipo} ${id}`;
+
+            if (tipo === 'moto' && resultados.motos) {
+              const moto = resultados.motos.find(m => m.id_moto_PK === parseInt(id));
+              if (moto) nombre = `${moto.marca?.nombre ?? ''} ${moto.modelo}`.trim();
+            }
+
+            if (tipo === 'accesorio') {
+              const accesorios = await Api.get('/inventario/accesorio/obtener');
+              const acc = accesorios.find(a => a.id_accesorio_PK === parseInt(id));
+              if (acc) nombre = acc.nombre;
+            }
+
+            document.getElementById('stat-mas-vendido').textContent = `${nombre} (${cantidad})`;
+          } else {
+            document.getElementById('stat-mas-vendido').textContent = '—';
+          }
+        } catch (error) {
+          document.getElementById('stat-mas-vendido').textContent = '—';
+        }
+      } catch (e) {
+        ['stat-ventas','stat-clientes','stat-motos','stat-empleados','stat-ingresos']
+          .forEach(id => document.getElementById(id).textContent = '—');
+      }
+    }
+
+    cargarEstadisticas();
+
+    async function cargarAlertasStock() {
+      if (!NotificacionesInventario.puedeVer()) return;
+      const datos = await NotificacionesInventario.cargar(false);
+      if (!datos?.total) return;
+      document.getElementById('panel-stock-bajo').style.display = 'block';
+      NotificacionesInventario.renderPanelDashboard('dashboard-stock-bajo');
+    }
+
+    cargarAlertasStock();
+  </script>
+</body>
+</html>
